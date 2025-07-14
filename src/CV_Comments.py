@@ -1,3 +1,60 @@
+"""
+CV.py - Cyclic Voltammetry Analysis Module
+------------------------------------------
+
+This module is part of the Envismetrics software suite and provides a complete pipeline
+for analyzing cyclic voltammetry (CV) data obtained from electrochemical experiments.
+
+Core Functions:
+---------------
+1. Data Reading and Preprocessing:
+   - Reads .csv, .xlsx, or .txt files with scan rate encoded in the filename.
+   - Extracts potential and current data for individual cycles.
+   - Supports Gaussian smoothing for noise reduction.
+
+2. Step 1: Raw Data Visualization
+   - Plots raw and smoothed CV curves.
+   - Allows selection of a specific scan cycle for plotting.
+
+3. Step 2: Peak Identification
+   - Detects anodic and cathodic peaks in user-defined potential ranges.
+   - Stores peak potentials, currents, and calculates Ef and ΔE0 for each scan.
+
+4. Step 3: Randles–Ševčík Analysis
+   - Uses linear regression to plot Ip vs. sqrt(scan rate).
+   - Calculates diffusion coefficients D for both anodic and cathodic processes.
+
+5. Step 4: Kinetic Parameter Estimation
+   - Estimates heterogeneous rate constants (k0) using the Nicholson method.
+   - Fits ψ–ΔEp and ψ–v⁻¹/² plots to extract slopes for k₀ calculation.
+
+6. Step 5: Tafel Analysis
+   - Two methods implemented to estimate the charge transfer coefficient α.
+   - Method 1: based on d(logJ)/dE (Tafel slope).
+   - Method 2: based on d(ln(I² / (Ip - I)))/dE.
+
+Features:
+---------
+- Modular design built on the `BaseModule` foundation.
+- Output is saved in versioned folders under `/outputs`.
+- Fully automatic plotting and result export as .png images and .json/.pkl files.
+- Easily extendable for new electrode systems or devices (Autolab, EC-Lab, etc.)
+
+Usage:
+------
+To use this module independently, run the script directly:
+    python CV.py
+
+You can also use the class methods `start1`, `start2`, `start3`, etc., within your own workflow.
+
+Dependencies:
+-------------
+- numpy, pandas, matplotlib, scipy, sklearn
+- config.py (user-defined settings)
+- BaseModule.py (provides save/load utilities)
+"""
+
+
 import os
 import pandas as pd
 import numpy as np
