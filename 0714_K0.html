@@ -61,3 +61,34 @@ It is specific to the redox couple, electrode surface, and conditions such as te
     <li>The electrode process is under kinetic or mixed control (not purely diffusion-controlled);</li>
     <li>The system is well-behaved and symmetric in redox response.</li>
 </ul>
+
+<h2>Extended Method this Software use: Lavagnini Approach</h2>
+<p>To extend the valid range of k⁰ evaluation, the <strong>Lavagnini method</strong> (Electroanalysis, 2004) combines Nicholson and Klingler–Kochi models to support larger peak separations (ΔEp):</p>
+
+<ul>
+    <li><strong>Applicable range:</strong> \( \Delta E_p \cdot n \approx 140 - 500 \) mV</li>
+    <li><strong>Valid for:</strong> Quasi-reversible and irreversible systems</li>
+    <li><strong>Assumptions:</strong> Diffusion-controlled, no adsorption, 1-electron process</li>
+</ul>
+
+<h3>Step 1 – Empirical fit for Ψ (Nicholson region):</h3>
+<div class="equation">
+    $$ \Psi = \frac{0.6288 + 0.0021 \cdot X}{1 - 0.017 \cdot X}, \quad X = \Delta E_p \cdot n \ (\mathrm{mV}) $$
+</div>
+
+<h3>Step 2 – Calculate \(k^0\):</h3>
+<div class="equation">
+    $$ k^0 = \Psi \cdot \left( \frac{D \cdot n \cdot F}{R \cdot T} \right)^{1/2} $$
+</div>
+
+<p>When ΔEp is larger or the system is highly irreversible, the following Klingler–Kochi-based form can be used:</p>
+<div class="equation">
+    $$ k^0 = 2.18 \cdot \left( \frac{D \cdot n \cdot v \cdot F}{R \cdot T} \right)^{1/2} \cdot \exp \left( -\alpha \cdot \frac{2nF\Delta E_p}{RT} \right) $$
+</div>
+
+<h3>Important Limitations:</h3>
+<ul>
+    <li>Requires known diffusion coefficient \(D\)</li>
+    <li>Only valid for well-defined peak-shaped CVs</li>
+    <li>Not valid if system exhibits coupled reactions or adsorption</li>
+</ul>
