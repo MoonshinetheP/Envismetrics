@@ -275,13 +275,13 @@ def check(module, version):
 
     data_file = os.path.join('outputs', version, 'data.json')
     if not os.path.exists(data_file):
-        data = {'result': 'file not exists'}
+        data = {'result': 'processing'}
         return jsonify(data)
 
     data = json.loads(open(data_file).read())
 
     if module not in data.keys():
-        data = {'result': 'module not exists'}
+        data = {'result': 'processing'}
         return jsonify(data)
 
     if module.upper() == 'CV':
@@ -298,7 +298,7 @@ def check(module, version):
                 return jsonify(data)
         except Exception as e:
             # print('22222')
-            data = {'result': str(e)}
+            data = {'result': 'processing'}
             return jsonify(data)
     elif module.upper() == 'HDV':
         if step == 2:
@@ -307,7 +307,7 @@ def check(module, version):
             method = int(request.args.get('method', '1'))
             f = 'form2_{}'.format(method)
         else:
-            data = {'result': 'step not exists'}
+            data = {'result': 'processing'}
             return jsonify(data)
 
         try:
@@ -315,7 +315,7 @@ def check(module, version):
                 data = {'result': 'done'}
                 return jsonify(data)
         except Exception as e:
-            data = {'result': str(e)}
+            data = {'result': 'processing'}
             return jsonify(data)
     elif module.upper() == 'CA':
         f = 'form{}'.format(step-1)
@@ -324,7 +324,7 @@ def check(module, version):
                 data = {'result': 'done'}
                 return jsonify(data)
         except Exception as e:
-            data = {'result': str(e)}
+            data = {'result': 'processing'}
             return jsonify(data)
 
     data = {'result': 'processing'}

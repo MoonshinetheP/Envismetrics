@@ -396,11 +396,11 @@ class CV(BaseModule):
             if not os.path.isfile(file):
                 continue
 
-            print(f)
+            print("filename:", f)
             rpm = Search_scan_rate(f)
             if rpm is None:
                 continue
-            print(rpm)
+            print("rpm:", rpm)
 
             if file.endswith(".xlsx"):
                 csv_file = file + ".csv"
