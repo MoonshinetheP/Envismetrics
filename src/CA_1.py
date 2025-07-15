@@ -1,3 +1,22 @@
+# ================================================================
+# ✨ Updates in step2() – 2025-07 by Huize
+#
+# 1. ✅ Added visual distinction for regression vs. non-regression points:
+#    - Points used in linear regression (Bt vs I) are shown in blue.
+#    - Points excluded from the fit are shown in gray.
+#    - Red line shows the linear regression result.
+#
+# 2. ✅ Enabled Advanced Mode support for per-transient parameter input:
+#    - Now supports 'n', 'a', 'c' as either:
+#        • single float (applied to all transients), or
+#        • list of values (e.g., c = [1e-3, 5e-4, 2e-3]) matching the number of uploaded files.
+#    - Also supports JSON-style string input: e.g., "[0.001, 0.0005, 0.002]"
+#    - Automatically validates length and applies corresponding values per transient.
+#
+# 3. 🧩 All updates are backward-compatible with previous interface and parameters.
+# ================================================================
+
+
 import os as os
 import pandas as pd
 import numpy as np
