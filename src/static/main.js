@@ -1,19 +1,67 @@
 let filesArray = [];
 
+// 👇 各模块的正则表达式、错误信息、示例
+const moduleConfig = {
+    CA: {
+        pattern: /^\d+_.*_CA$/i,
+        reason: " The filename must start with a number and end with '_CA'",
+        example: "Example: 1_sample_CA.xlsx"
+    },
+    CV: {
+        pattern: /^.*\d+mVs_CV$/i,
+        reason: "The filename must include scan rate (e.g., '100mVs') and end with '_CV'",
+        example: "Example: NiFoam_100mVs_CV.xlsx"
+    },
+    HDV: {
+        pattern: /^.*\d+rpm_HDV$/i,
+        reason: "The filename must include rotation speed (e.g., '800rpm') and end with '_HDV'",
+        example: "Example: Ni_P_800rpm_HDV.xlsx"
+    }
+};
+
+// 👇 当前模块，从 URL 中判断
+function detectModuleFromURL() {
+    const url = window.location.href.toUpperCase();
+    if (url.includes("/CV")) return "CV";
+    if (url.includes("/HYD")) return "HDV";
+    return "CA"; // 默认模块
+}
+
+const currentModule = detectModuleFromURL();
+console.log("currentmodule:", currentModule);
+const { pattern, reason, example } = moduleConfig[currentModule];
+const allowedExtensions = [".xlsx", ".tsv", ".txt", ".csv"];
+
+// 👇 更新文件列表并显示错误信息
 function updateFileList() {
     const fileListDisplay = document.getElementById('file-list');
     const fileCountDisplay = document.getElementById('file-message');
 
     fileListDisplay.innerHTML = '';
+
     filesArray.forEach((file, index) => {
+        const filename = file.name;
+        const ext = filename.slice(filename.lastIndexOf(".")).toLowerCase();
+        const baseName = filename.slice(0, filename.lastIndexOf("."));
+
+        let errorMsg = "";
+        if (!allowedExtensions.includes(ext)) {
+            errorMsg = "Unsupported file type (.xlsx, .tsv, .txt only)";
+        } else if (!pattern.test(baseName)) {
+            errorMsg = `${reason}<br>${example}`;
+        }
+
         const div = document.createElement('div');
         div.className = 'file-item';
         div.innerHTML = `
-        <button onclick="removeFile(${index})"> ❌ </button>
-        <span>${file.name}</span>
-      `;
+            <button onclick="removeFile(${index})">❌</button>
+            <span>${filename}</span>
+            ${errorMsg ? `<div style="color: red; font-size: 0.9em;">${errorMsg}</div>` : ''}
+        `;
+
         fileListDisplay.appendChild(div);
     });
+
     fileCountDisplay.textContent = filesArray.length + ' file(s) selected';
 }
 

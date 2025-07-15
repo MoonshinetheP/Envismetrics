@@ -89,13 +89,13 @@ def Search_scan_rate(filename):
         # Handle files without RPM values
         return -1  # You can use any default value or treatment
 
-def Milad(filename):
-    match = re.search(r'PFOS_(\d+)', filename)
-    if match:
-        return int(match.group(1))
-    else:
-        # Handle files without RPM values
-        return -1  # You can use any default value or treatment
+# def Milad(filename):
+#     match = re.search(r'PFOS_(\d+)', filename)
+#     if match:
+#         return int(match.group(1))
+#     else:
+#         # Handle files without RPM values
+#         return -1  # You can use any default value or treatment
 
 
 def read_ec_lab_file(file_path, encoding='utf-8'):
