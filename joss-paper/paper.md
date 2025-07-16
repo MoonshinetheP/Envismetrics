@@ -157,10 +157,14 @@ In *Envismetrics*, users can select potential values to automatically generate t
 >
 > This diagnostic approach does **not** suggest physical dependence of $D$ on potential, but rather supports informed analysis based on electrochemical theory.
 
+<!--
+
 ![(a) Levich plot module](Image_Set/L_DMAB.png){ width=45% }
 ![(b) Levich analysis module](Image_Set/LA_D.png){ width=45% }
 
 ![Example of figures in Envismetrics(HDV Module): (a) Levich plot module, (b) Levich analysis module.]
+
+-->
 
 <div style="display: flex; gap: 10px;">
   <figure style="width: 49%;">
