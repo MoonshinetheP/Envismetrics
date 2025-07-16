@@ -112,7 +112,7 @@ To aid in interpreting the equations below, Table 2 summarizes commonly used ele
 
 ## Data Processing
 
-Envismetrics supports a wide range of data formats from various potentiostats, including EC-Lab, Autolab, Metrohm, and more. The software can handle document types such as XLSX, TXT, and CSV. Users simply need to export their data and drag the files into the software, making data import and processing straightforward and user-friendly. We are continuously adding support for more commonly used commercial potentiostats. If you do not find support for your specific potentiostat, rest assured that updates will be released shortly to include additional data formats.
+Envismetrics supports commonly used plain-text electrochemical data formats, including .xlsx, .csv, and .txt, exported from potentiostat software such as EC-Lab (BioLogic), NOVA (Autolab), and Metrohm. Users can directly upload these files to the web-based interface without additional preprocessing, provided the files follow standard export structures. The software automatically parses time, current, and potential data for downstream analysis. File validation is included to help ensure compatibility and inform users of any formatting issues. Support for additional instrument vendors and data formats is actively expanding and documented in the repository.
 
 ![Data Import Window: Users can easily drag and drop or select their experimental data for quick and straightforward import.](Image_Set/1.png){ width=80% }
 
