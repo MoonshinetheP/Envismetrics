@@ -18,7 +18,7 @@ authors:
     affiliation: "3"
   - name: Fuqin Zhou
     orcid: 0009-0000-0342-0033
-    affiliation: "2"
+    affiliation: "5"
   - name: Omowunmi Sadik
     orcid: 0000-0001-8514-0608
     corresponding: true
@@ -32,6 +32,9 @@ affiliations:
    index: 3
  - name: New Jersey Institute of Technology, Chemistry and Environmental Science
    index: 4
+ - name: New Jersey Institute of Technology, Martin Tuchman School of Management
+   index: 5
+
 date: "2024-08-30"
 bibliography: bibliography.bib
 ---
