@@ -245,6 +245,7 @@ $$
 Additionally, the mass-transport corrected version proposed by Danlei Li et al. [@LI2018117] is implemented in this module. This method has also been applied in other research, including the study of dopamine oxidation at gold electrodes conducted by Bacil and co-workers [@zanello2019inorganic]. The transfer coefficient is calculated by: 
 
 Function 2: Peak Searching
+
 $$
 -\frac{d\ln \left( \frac{1}{I_a} - \frac{1}{I_{\text{peak}}} \right)}{d\theta} = \alpha_a'
 $$
@@ -278,7 +279,14 @@ This function generates plots of applied potential vs. time and corresponding cu
 
 ### Function 2: Cottrell Equation Plot
 
-This function utilizes the Cottrell equation to calculate the diffusion coefficient. The Cottrell equation describes the current response of an electrochemical cell as a function of time, providing a means to determine the diffusion coefficient from chronoamperometric data. The software plots the Cottrell equation, allowing users to input parameters such as interval, \( n \), \( A \), and \( C_0 \), and calculates the diffusion coefficient. The outputs include a figure of the Cottrell equation plot and a table of diffusion coefficients.
+This function utilizes the Cottrell equation to calculate the diffusion coefficient from chronoamperometric (CA) data. The Cottrell equation describes the current response of an electrochemical system under planar diffusion control as a function of time:
+
+$$
+i(t) = \frac{nFA C_0 D^{1/2}}{\pi^{1/2} t^{1/2}} 
+$$
+
+In *Envismetrics*, users can input experimental parameters such as the fitting interval, $n$, $A$, and $C_0$. The software then plots $i(t)$ vs. $t^{-1/2}$ and performs linear regression to determine $D$. The outputs include both a regression figure and a summary table of calculated diffusion coefficients.
+
 
 <!--
 ![(a) Plotting and Gaussian Filtering I vs t](Image_Set/CAIt_D.png){ width=45% }
