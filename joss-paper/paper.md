@@ -203,7 +203,7 @@ $$
 
 ### Function 4: Standard Rate Constant Calculation
 
-The standard rate constant, $k^0$, is calculated using a dimensionless kinetic parameter, $\Psi$, which relates $k^0$ to the system’s electrochemical and physical properties. This method is based on the classical Nicholson model [@nicholson1965theory] and was extended by Lavagnini et al. [@lavagnini2004extended] to cover a broader range of peak separations ($\Delta E_p$).
+The standard rate constant, $k_0$, is calculated using a dimensionless kinetic parameter, $\Psi$, which relates $k_0$ to the system’s electrochemical and physical properties. This method is based on the classical Nicholson model [@nicholson1965theory] and was extended by Lavagnini et al. [@lavagnini2004extended] to cover a broader range of peak separations ($\Delta E_p$).
 
 Envismetrics automatically estimates $\Psi$ from the peak-to-peak separation and applies the empirical Lavagnini relationship:
 
