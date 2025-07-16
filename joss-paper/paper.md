@@ -288,7 +288,7 @@ $$
 i(t) = \frac{nFA C_0 D^{1/2}}{\pi^{1/2} t^{1/2}} 
 $$
 
-In *Envismetrics*, users can input experimental parameters such as the fitting interval, $n$, $A$, and $C_0$. The software then plots $i(t)$ vs. $\sqrt{nFAC/\pi t}$ and performs linear regression to determine $D$. The outputs include both a regression figure and a summary table of calculated diffusion coefficients.
+In *Envismetrics*, users can input experimental parameters such as the fitting interval (number of the input files), $n$, $A$, and $C_0$. The software then plots $i(t)$ vs. $\sqrt{nFAC/\pi t}$ and performs linear regression to determine $D$. The outputs include both a regression figure and a summary table of calculated diffusion coefficients.
 
 
 <!--
