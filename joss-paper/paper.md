@@ -181,9 +181,34 @@ $$
 I_{\text{peak}} = 0.4463 \sqrt{n^{\prime} + \beta} \ n \ F \ C \ A \sqrt{\frac{n F \nu D}{R T}}
 $$
 
-### Function 4: Rate Constant Calculation
+### Function 4: Standard Rate Constant Calculation
 
-The rate constant is calculated using a dimensionless kinetic parameter, $\Psi$. This parameter is a normalized value that represents the rate constant $k_0$ in relation to various factors such as the diffusion coefficient and the number of electrons transferred. This method was originally proposed by Nicholson [@nicholson1965theory] and later extended by Lavagnini et al. [@lavagnini2004extended].
+The standard rate constant, $k^0$, is calculated using a dimensionless kinetic parameter, $\Psi$, which relates $k^0$ to the system’s electrochemical and physical properties. This method is based on the classical Nicholson model [@nicholson1965theory] and was extended by Lavagnini et al. [@lavagnini2004extended] to cover a broader range of peak separations ($\Delta E_p$).
+
+Envismetrics automatically estimates $\Psi$ from the peak-to-peak separation and applies the empirical Lavagnini relationship:
+
+$$
+\Psi = \frac{0.6288 + 0.0021 \cdot X}{1 - 0.017 \cdot X}, \quad X = \Delta E_p \cdot n \quad (\text{in mV})
+$$
+
+From $\Psi$, the standard rate constant is then calculated as:
+
+$$
+k^0 = \Psi \cdot \left( \frac{D \cdot n \cdot F}{R \cdot T} \right)^{1/2}
+$$
+
+For systems with large $\Delta E_p$ or highly irreversible behavior, Envismetrics also supports the Klingler–Kochi formulation:
+
+$$
+k^0 = 2.18 \cdot \left( \frac{D \cdot n \cdot \nu \cdot F}{R \cdot T} \right)^{1/2} \cdot \exp \left( -\alpha \cdot \frac{2nF \Delta E_p}{RT} \right)
+$$
+
+---
+This method assumes that the electrochemical process is diffusion-controlled, with no coupled chemical reactions or adsorption phenomena. It is applicable primarily to well-defined, peak-shaped cyclic voltammograms (CVs) under quasi-reversible or irreversible conditions. The diffusion coefficient $D$ must be known or reliably estimated beforehand. Since the Lavagnini approach is empirical, it performs best when the standard rate constant $k_0$ lies within an intermediate kinetic range—not too fast or too slow. Users should interpret $k_0$ results in accordance with electrochemical theory to avoid misapplication outside valid regimes.
+
+This function allows users to compare kinetic behavior across different systems using consistent theoretical models, while providing flexibility in selecting which method to apply based on the peak separation and system reversibility.
+
+
 
 ### Function 5: Tafel Analysis Module
 
