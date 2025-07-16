@@ -120,13 +120,34 @@ Envismetrics supports commonly used plain-text electrochemical data formats, inc
 
 ### Function 1: Plotting and Gaussian Filtering
 
-This function plots the experimental data sorted by RPM (rotations per minute) values and allows users to apply a Gaussian filter to obtain a smoothed figure. Users can add the optional Gaussian filter by entering the sigma value, enhancing the clarity of the plotted data.
+This function plots the experimental data sorted by RPM (rotations per minute) and provides an optional Gaussian smoothing feature. Users may specify a sigma value to apply the filter — larger sigma values result in smoother curves by reducing high-frequency noise, but can also suppress sharp features in the data. To disable filtering, users should set sigma = 0.
 
-### Function 2: Levich and Koutecky-Levich Analysis
+The Gaussian filter works by convolving the current signal with a normal distribution (Gaussian kernel), helping to visualize trends in noisy electrochemical data. However, users are advised to apply filtering judiciously, as excessive smoothing may obscure important peaks or kinetic features.
 
-Levich and Koutecky-Levich analyses are essential for calculating the diffusion coefficient [@masa2014koutecky]. Traditionally, this involves selecting several potential values, plotting the function of RPM versus the function of current, performing linear regression, and calculating the diffusion coefficient from the slope.
+### Function 2: Levich and Koutecky–Levich Analysis
 
-Envismetrics simplifies this process by providing an automated Levich and Koutecky-Levich plot function. Users can generate these plots directly from their data. Additionally, the software offers an advanced analysis feature that dynamically calculates and records the slope and diffusion coefficient for every applied potential. This allows users to observe the changes in the slope with varying potentials, helping them decide which range of data to select for their analysis.
+Levich and Koutecky–Levich (KL) analyses are commonly used for studying electrochemical reactions under laminar flow convection conditions [@masa2014koutecky]. *Envismetrics* streamlines these workflows by automatically generating both Levich and KL plots from experimental data.
+
+Levich analysis is primarily used to determine the diffusion coefficient \( D \) under mass-transport-limited conditions. The classical Levich equation is:
+
+$$
+i_L = 0.62\, n F A D^{2/3} \omega^{1/2} \nu^{-1/6} C
+$$
+
+Koutecky–Levich analysis expands on this by incorporating kinetic limitations and is often used to estimate the standard rate constant \( k^0 \). It retains the same diffusion-related slope as the Levich plot. The KL equation is:
+
+$$
+\frac{1}{i} = \frac{1}{i_k} + \frac{1}{i_L}
+$$
+
+Or explicitly:
+
+$$
+\frac{1}{i} = \frac{1}{n F A k^0 C} + \frac{1}{0.62\, n F A D^{2/3} \omega^{1/2} \nu^{-1/6} C}
+$$
+
+In *Envismetrics*, users can select potential values to automatically generate these plots, with slopes and derived kinetic parameters \( D \) calculated dynamically for each potential. This feature enables users to explore the potential dependence of apparent kinetics and identify plateaus where mass transport dominates. Users should apply Levich/KL analyses only in regions where steady-state limiting currents are observed. *Envismetrics* allows flexible selection of such regions, but interpretation should follow electrochemical theory to avoid applying these models in inappropriate potential windows.
+
 
 ## Cyclic Voltammetry (CV) Module
 
