@@ -29,7 +29,7 @@ function detectModuleFromURL() {
 
 const currentModule = detectModuleFromURL();
 console.log("currentmodule:", currentModule);
-const { pattern, reason, example } = moduleConfig[currentModule];
+const {pattern, reason, example} = moduleConfig[currentModule];
 const allowedExtensions = [".xlsx", ".tsv", ".txt", ".csv"];
 
 // 👇 更新文件列表并显示错误信息
@@ -235,4 +235,49 @@ function tryAgain() {
 
 function goBack() {
     window.history.back();
+}
+
+function callAPI(URL) {
+    // 模拟调用 API
+    const intervalId = setInterval(function () {
+
+        // 发送请求到你的 API
+        fetch(URL)
+            .then(response => response.json())
+            .then(data => {
+                // 检查 API 返回结果是否为 "done"
+                if (data.result === "done") {
+                    // 如果是，则刷新当前页面
+                    location.reload();
+                } else if (data.result.startsWith("error")) {
+                    // 如果是 error，显示服务器错误。
+                    clearInterval(intervalId);
+                    const progressBarDiv = document.getElementById("progress_bar");
+                    progressBarDiv.innerHTML = `
+                            <div class="alert alert-danger" role="alert">
+                                ${data.result}
+                            </div>
+                        `;
+                } else if (data.result !== "processing") {
+                    // 如果是 error，显示服务器错误。
+                    clearInterval(intervalId);
+                    const progressBarDiv = document.getElementById("progress_bar");
+                    progressBarDiv.innerHTML = `
+                            <div class="alert alert-danger" role="alert">
+                                An error occurred on the server.
+                            </div>
+                        `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                clearInterval(intervalId);
+                const progressBarDiv = document.getElementById("progress_bar");
+                progressBarDiv.innerHTML = `
+                        <div class="alert alert-danger" role="alert">
+                            Failed to contact the server. Please try again later.
+                        </div>
+                    `;
+            });
+    }, 1000); // 每隔一秒调用一次 API
 }
