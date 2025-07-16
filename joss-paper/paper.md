@@ -18,7 +18,7 @@ authors:
     affiliation: "3"
   - name: Fuqin Zhou
     orcid: 0009-0000-0342-0033
-    affiliation: "2"
+    affiliation: "5"
   - name: Omowunmi Sadik
     orcid: 0000-0001-8514-0608
     corresponding: true
@@ -32,6 +32,9 @@ affiliations:
    index: 3
  - name: New Jersey Institute of Technology, Chemistry and Environmental Science
    index: 4
+ - name: New Jersey Institute of Technology, Martin Tuchman School of Management
+   index: 5
+
 date: "2024-08-30"
 bibliography: bibliography.bib
 ---
@@ -56,7 +59,7 @@ While these methods are widely accepted, manual analysis can be labor-intensive 
 
 # Statement of Need
 
-Electrochemical researchers commonly analyze data using a combination of proprietary instrument software (e.g., NOVA for Autolab), manual spreadsheet tools (e.g., Excel), and general-purpose plotting software (e.g., Origin, SigmaPlot). While proprietary software facilitates data collection and basic visualization, it is often platform-specific, instrument-dependent, and limited in automation and cross-experiment reproducibility. Tools like Origin provide flexible plotting, but require manual preprocessing, repeated formatting, and domain expertise for kinetic modeling.
+Electrochemical researchers commonly analyze data using a combination of proprietary instrument software (e.g., NOVA for Autolab), manual spreadsheet tools (e.g., Excel), and general-purpose plotting software (e.g., Origin, SigmaPlot). While proprietary software facilitates data collection and basic visualization, it is often platform-specific, instrument-dependent, and limited in automation and cross-experiment reproducibility. Tools like Origin provide flexible plotting, but require manual preprocessing, repeated formatting, and domain expertise for kinetic modeling [@Garg2021].
 
 Envismetrics fills this gap by offering a powerful modular, web-based platform focused on automated analysis of electrochemical data, particularly from cyclic voltammetry (CV), linear sweep voltammetry at rotating disk electrodes (LSV at RDE), and chronoamperometry (CA). By supporting common data formats like .xlsx, .csv, and .txt, Envismetrics works independently of instrument brands—allowing researchers to export plaintext data from proprietary systems and continue their analysis seamlessly.
 
@@ -112,21 +115,73 @@ To aid in interpreting the equations below, Table 2 summarizes commonly used ele
 
 ## Data Processing
 
-Envismetrics supports a wide range of data formats from various potentiostats, including EC-Lab, Autolab, Metrohm, and more. The software can handle document types such as XLSX, TXT, and CSV. Users simply need to export their data and drag the files into the software, making data import and processing straightforward and user-friendly. We are continuously adding support for more commonly used commercial potentiostats. If you do not find support for your specific potentiostat, rest assured that updates will be released shortly to include additional data formats.
+Envismetrics supports commonly used plain-text electrochemical data formats, including .xlsx, .csv, and .txt, exported from potentiostat software such as EC-Lab (BioLogic), NOVA (Autolab), and Metrohm. Users can directly upload these files to the web-based interface without additional preprocessing, provided the files follow standard export structures. The software automatically parses time, current, and potential data for downstream analysis. File validation is included to help ensure compatibility and inform users of any formatting issues. Support for additional instrument vendors and data formats is actively expanding and documented in the repository.
 
 ![Data Import Window: Users can easily drag and drop or select their experimental data for quick and straightforward import.](Image_Set/1.png){ width=80% }
 
-## Hydrodynamic Voltammetry (HDV) Module
+## Hydrodynamic Voltammetry (HDV) - Rotating Disc Electrode (RDE) Module
 
 ### Function 1: Plotting and Gaussian Filtering
 
-This function plots the experimental data sorted by RPM (rotations per minute) values and allows users to apply a Gaussian filter to obtain a smoothed figure. Users can add the optional Gaussian filter by entering the sigma value, enhancing the clarity of the plotted data.
+This function plots the experimental data sorted by RPM (rotations per minute) and provides an optional Gaussian smoothing feature. Users may specify a sigma value to apply the filter — larger sigma values result in smoother curves by reducing high-frequency noise, but can also suppress sharp features in the data. To disable filtering, users should set sigma = 0.
 
-### Function 2: Levich and Koutecky-Levich Analysis
+The Gaussian filter works by convolving the current signal with a normal distribution (Gaussian kernel), helping to visualize trends in noisy electrochemical data. However, users are advised to apply filtering judiciously, as excessive smoothing may obscure important peaks or kinetic features.
 
-Levich and Koutecky-Levich analyses are essential for calculating the diffusion coefficient [@masa2014koutecky]. Traditionally, this involves selecting several potential values, plotting the function of RPM versus the function of current, performing linear regression, and calculating the diffusion coefficient from the slope.
+### Function 2: Levich and Koutecky–Levich Analysis
 
-Envismetrics simplifies this process by providing an automated Levich and Koutecky-Levich plot function. Users can generate these plots directly from their data. Additionally, the software offers an advanced analysis feature that dynamically calculates and records the slope and diffusion coefficient for every applied potential. This allows users to observe the changes in the slope with varying potentials, helping them decide which range of data to select for their analysis.
+Levich and Koutecky–Levich (KL) analyses are commonly used for studying electrochemical reactions under laminar flow convection conditions [@masa2014koutecky]. *Envismetrics* streamlines these workflows by automatically generating both Levich and KL plots from experimental data.
+
+Levich analysis is primarily used to determine the diffusion coefficient $D$ under mass-transport-limited conditions. The classical Levich equation is:
+
+$$
+i_L = 0.62\, n F A D^{2/3} \omega^{1/2} \nu^{-1/6} C
+$$
+
+Koutecky–Levich analysis expands on this by incorporating kinetic limitations and is often used to estimate the standard rate constant $k_0$. It retains the same diffusion-related slope as the Levich plot. The KL equation is:
+
+$$
+\frac{1}{i} = \frac{1}{i_k} + \frac{1}{i_L}
+$$
+
+Or explicitly:
+
+$$
+\frac{1}{i} = \frac{1}{n F A k^0 C} + \frac{1}{0.62\, n F A D^{2/3} \omega^{1/2} \nu^{-1/6} C}
+$$
+
+In *Envismetrics*, users can select potential values to automatically generate these plots, with slopes and derived kinetic parameters $D$ calculated dynamically for each potential. This feature enables users to explore the potential dependence of apparent kinetics and identify plateaus where mass transport dominates. Users should apply Levich/KL analyses only in regions where steady-state limiting currents are observed. *Envismetrics* allows flexible selection of such regions, but interpretation should follow electrochemical theory to avoid applying these models in inappropriate potential windows.
+
+> **Note**: While *Envismetrics* displays diffusion coefficients calculated at multiple potentials, this is **not intended to imply that $D$ varies with potential**. Rather, each $D$ value is obtained by applying the **definitional form** of the Levich equation at a specific potential. In practice, current values — even within the limiting current plateau — often fluctuate slightly due to experimental noise, convection, or surface effects.  
+>
+> By plotting $D$ across a range of potentials, users can:
+> - Visually identify regions where $D$ remains consistent;
+> - Average $D$ values across the plateau for better statistical reliability;
+> - Avoid misinterpretation caused by using a single-point calculation.
+>
+> This diagnostic approach does **not** suggest physical dependence of $D$ on potential, but rather supports informed analysis based on electrochemical theory.
+
+<!--
+
+![(a) Levich plot module](Image_Set/L_DMAB.png){ width=45% }
+![(b) Levich analysis module](Image_Set/LA_D.png){ width=45% }
+
+![Example of figures in Envismetrics(HDV Module): (a) Levich plot module, (b) Levich analysis module.]
+
+-->
+
+<div style="display: flex; gap: 10px;">
+  <figure style="width: 49%;">
+    <img src="Image_Set/L_DMAB.png" alt="(a) Levich plot module" width="100%" />
+    <figcaption><strong>(a)</strong> Levich plot module</figcaption>
+  </figure>
+  <figure style="width: 49%;">
+    <img src="Image_Set/LA_D.png" alt="(b) Levich analysis module" width="100%" />
+    <figcaption><strong>(b)</strong> Levich analysis module</figcaption>
+  </figure>
+</div>
+<figcaption style="width: 100%; text-align: center; margin-top: 10px;">
+  <strong>Figure 2.</strong> (a) Levich plot module, (b) Levich analysis module.
+</figcaption>
 
 ## Cyclic Voltammetry (CV) Module
 
@@ -150,9 +205,34 @@ $$
 I_{\text{peak}} = 0.4463 \sqrt{n^{\prime} + \beta} \ n \ F \ C \ A \sqrt{\frac{n F \nu D}{R T}}
 $$
 
-### Function 4: Rate Constant Calculation
+### Function 4: Standard Rate Constant Calculation
 
-The rate constant is calculated using a dimensionless kinetic parameter, \(\Psi\). This parameter is a normalized value that represents the rate constant (\(k_0\)) in relation to various factors such as the diffusion coefficient and the number of electrons transferred. This method was originally proposed by Nicholson [@nicholson1965theory] and later extended by Lavagnini et al. [@lavagnini2004extended].
+The standard rate constant, $k_0$, is calculated using a dimensionless kinetic parameter, $\Psi$, which relates $k_0$ to the system’s electrochemical and physical properties. This method is based on the classical Nicholson model and was extended by Lavagnini et al. to cover a broader range of peak separations ($\Delta E_p$) [@nicholson1965theory；@lavagnini2004extended].
+
+Envismetrics automatically estimates $\Psi$ from the peak-to-peak separation and applies the empirical Lavagnini relationship:
+
+$$
+\Psi = \frac{0.6288 + 0.0021 \cdot X}{1 - 0.017 \cdot X}, \quad X = \Delta E_p \cdot n \quad (\text{in mV})
+$$
+
+For systems with large ($\Delta E_p$) or highly irreversible behavior, Envismetrics also supports the Klingler–Kochi formulation:
+
+$$
+\Psi = \frac{2.18}{\alpha \pi} \exp \left( - \frac{\alpha n \Delta E_p F}{2RT} \right)
+$$
+
+From $\Psi$, the standard rate constant is then calculated as:
+
+$$
+k^0 = \Psi \cdot \left( \frac{D \cdot n \cdot F}{R \cdot T} \right)^{1/2}
+$$
+
+---
+This method assumes that the electrochemical process is diffusion-controlled, with no coupled chemical reactions or adsorption phenomena. It is applicable primarily to well-defined, peak-shaped cyclic voltammograms (CVs) under quasi-reversible or irreversible conditions. The diffusion coefficient $D$ must be known or reliably estimated beforehand. Since the Lavagnini approach is empirical, it performs best when the standard rate constant $k_0$ lies within an intermediate kinetic range—not too fast or too slow. Users should interpret $k_0$ results in accordance with electrochemical theory to avoid misapplication outside valid regimes.
+
+This function allows users to compare kinetic behavior across different systems using consistent theoretical models, while providing flexibility in selecting which method to apply based on the peak separation and system reversibility.
+
+
 
 ### Function 5: Tafel Analysis Module
 
@@ -166,11 +246,37 @@ $$
 \alpha_c = -\frac{RT}{F} \left( \frac{d \ln |j_{c, \text{corr}}|}{dE} \right)
 $$
 
-Additionally, the mass-transport corrected version proposed by Danlei Li et al. [@LI2018117] is implemented in this module. This method has also been applied in other research, including the study of dopamine oxidation at gold electrodes conducted by Bacil and co-workers [@zanello2019inorganic]. The transfer coefficient is calculated by:
+Additionally, a mass-transport corrected version has been proposed and implemented in this module [@LI2018117]. This method has also been applied in other research, including the study of dopamine oxidation at gold electrodes conducted by Bacil and co-workers [@C9CP05527D]. The transfer coefficient is calculated by: 
+
+Function 2: Peak Searching
 
 $$
 -\frac{d\ln \left( \frac{1}{I_a} - \frac{1}{I_{\text{peak}}} \right)}{d\theta} = \alpha_a'
 $$
+
+where peak potentials and corresponding peak currents are identified using Function 2: Peak Searching, which applies max value and derivative-based detection algorithms.
+
+<!--
+![(a) Peak Searching module](Image_Set/CVPS_D.png){ width=45% }
+![(b) Randles–Ševčík Analysis Module](Image_Set/RC_DMAB.png){ width=45% }
+
+![Example of figures in Envismetrics(CV Module): (a) Peak Searching module, (b) Randles–Ševčík Analysis Module.]
+-->
+
+<div style="display: flex; gap: 10px;">
+  <figure style="width: 49%;">
+    <img src="Image_Set/CVPS_D.png" alt="(a) Peak searching module (CV-2)">
+    <figcaption><strong>(a)</strong> Peak searching module (CV-2)</figcaption>
+  </figure>
+  <figure style="width: 49%;">
+    <img src="Image_Set/RC_DMAB.png" alt="(b) Randles–Ševčík analysis module (CV-3)">
+    <figcaption><strong>(b)</strong> Randles–Ševčík analysis module (CV-3)</figcaption>
+  </figure>
+</div>
+
+<figcaption style="width: 100%; text-align: center; margin-top: 10px;">
+  <strong>Figure 3.</strong> Visual outputs from the CV module: (a) Peak searching module (CV-2), (b) Randles–Ševčík analysis module (CV-3).
+</figcaption>
 
 ## Step Techniques Structure: CA Module
 
@@ -180,18 +286,63 @@ This function generates plots of applied potential vs. time and corresponding cu
 
 ### Function 2: Cottrell Equation Plot
 
-This function utilizes the Cottrell equation to calculate the diffusion coefficient. The Cottrell equation describes the current response of an electrochemical cell as a function of time, providing a means to determine the diffusion coefficient from chronoamperometric data. The software plots the Cottrell equation, allowing users to input parameters such as interval, \( n \), \( A \), and \( C_0 \), and calculates the diffusion coefficient. The outputs include a figure of the Cottrell equation plot and a table of diffusion coefficients.
+This function utilizes the Cottrell equation to calculate the diffusion coefficient from chronoamperometric (CA) data. The Cottrell equation describes the current response of an electrochemical system under planar diffusion control as a function of time:
 
-![(a) Levich plot module](Image_Set/L_DMAB.png){ width=45% }
-![(b) Levich analysis module](Image_Set/LA_D.png){ width=45% }
-![(c) Peak Searching module](Image_Set/CVPS_D.png){ width=45% }
-![(d) Randles–Ševčík Analysis Module](Image_Set/RC_DMAB.png){ width=45% }
+$$
+i(t) = \frac{nFA C_0 D^{1/2}}{\pi^{1/2} t^{1/2}} 
+$$
 
-![Example of figures in Envismetrics: (a) Levich plot module, (b) Levich analysis module, (c) Peak Searching module, (d) Randles–Ševčík Analysis Module.]
+In *Envismetrics*, users can input experimental parameters such as the fitting interval (number of the input files), $n$, $A$, and $C_0$. The software then plots $i(t)$ vs. $\sqrt{nFAC/\pi t}$ and performs linear regression to determine $D$. The outputs include both a regression figure and a summary table of calculated diffusion coefficients.
+
+
+<!--
+![(a) Plotting and Gaussian Filtering I vs t](Image_Set/CAIt_D.png){ width=45% }
+![(b) Diffusion coefficient regression section](Image_Set/CAp2_D.png){ width=45% }
+
+![Example of figures in Envismetrics(CA Module): (a) , (b).]
+-->
+
+<div style="display: flex; gap: 10px;">
+  <figure style="width: 49%;">
+    <img src="Image_Set/CAIt_D.png" alt="(a) Current-time curve plotting (CA-1)">
+    <figcaption><strong>(a)</strong> Current–time curve plotting module (CA-1)</figcaption>
+  </figure>
+  <figure style="width: 49%;">
+    <img src="Image_Set/CAp2_D.png" alt="(b) Diffusion coefficient regression module (CA-2)">
+    <figcaption><strong>(b)</strong> Diffusion coefficient regression module (CA-2)</figcaption>
+  </figure>
+</div>
+
+<figcaption style="width: 100%; text-align: center; margin-top: 10px;">
+  <strong>Figure 4.</strong> Output visualization from the CA module: (a) Current–time curve plotting module (CA-1), (b) Diffusion coefficient regression module based on Cottrell equation (CA-2).
+</figcaption>
+
+## Planned Features and Future Work
+
+We are actively developing Envismetrics to improve usability, flexibility, and scientific rigor across all modules. Upcoming features include:
+
+- **CV Module**
+  - Fully automated peak detection across voltammetric cycles.
+  - Regime diagnostics based on scan rate normalization (e.g., $i_p$ vs. $\sqrt{v}$ scaling) to identify deviations from planar diffusion behavior, preventing misuse of Randles–Ševčík or Tafel analyses.
+  - Option for users to automatically discard non-conforming voltammograms to ensure dataset consistency.
+  - Input parameter validation for key variables (e.g., electrode radius, diffusion coefficients, concentration) with real-time warnings for unphysical or inconsistent entries.
+
+- **HDV (RDE) Module**
+  - Automatic detection of limiting current plateaus to improve Levich and Koutecký–Levich regression accuracy.
+  - Enhanced fitting diagnostics with feedback on linearity and potential outliers.
+
+- **Global Features**
+  - Additional filtering methods (e.g., Savitzky–Golay, Gaussian smoothing) for improved preprocessing of noisy data.
+  - Interactive, user-defined fitting regions in regression plots for more flexible curve fitting workflows.
+  - Export of processed results and figures in structured formats (CSV, JSON) to support reproducibility and downstream analysis.
+  - Early-stage development of an **EIS analysis module**, enabling impedance spectroscopy integration with CV/CA workflows.
+
+These features are currently under active development and will be released progressively. We welcome user feedback and contributions via GitHub Issues and Pull Requests.
+
 
 ## Applications in Research
 
-Envismetrics has been employed in various research projects, demonstrating its versatility in the analysis of electrochemical systems. For instance, the software was utilized in the investigation of photocatalytic degradation of perfluorooctanoic acid (PFOA), published in *Chemosphere* [@OSONGA2024143057], where it facilitated the precise analysis of kinetic parameters essential to understanding the degradation mechanisms. Additionally, Envismetrics played a key role in mechanistic studies on the electrochemical oxidation of dimethylamine borane (DMAB), as documented in recent works [@sadik2024dimethylamine,@Xue_2023,@TORABFAM2025107950]. In these studies, Envismetrics enabled the accurate processing of electrochemical data, which was crucial for validating the proposed mechanisms and deriving key kinetic parameters.
+Envismetrics has been employed in various research projects, demonstrating its versatility in the analysis of electrochemical systems. For instance, the software was utilized in the investigation of photocatalytic degradation of perfluorooctanoic acid (PFOA), published in *Chemosphere* [@OSONGA2024143057], where it facilitated the precise analysis of kinetic parameters essential to understanding the degradation mechanisms. Additionally, Envismetrics played a key role in mechanistic studies on the electrochemical oxidation of dimethylamine borane (DMAB), as documented in recent works [@Xue_2023,@TORABFAM2025107950]. In these studies, Envismetrics enabled the accurate processing of electrochemical data, which was crucial for validating the proposed mechanisms and deriving key kinetic parameters.
 
 ## Author Contributions (CRediT Taxonomy)
 
