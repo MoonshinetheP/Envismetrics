@@ -251,10 +251,24 @@ $$
 
 where peak potentials and corresponding peak currents are identified using Function 2: Peak Searching, which applies max value and derivative-based detection algorithms.
 
+<!--
 ![(a) Peak Searching module](Image_Set/CVPS_D.png){ width=45% }
 ![(b) Randles–Ševčík Analysis Module](Image_Set/RC_DMAB.png){ width=45% }
 
 ![Example of figures in Envismetrics(CV Module): (a) Peak Searching module, (b) Randles–Ševčík Analysis Module.]
+-->
+
+<div style="display: flex; gap: 10px;">
+  <figure style="width: 49%;">
+    <img src="Image_Set/CVPS_D.png" alt="(a) Peak searching module (CV-2)">
+    <figcaption><strong>(a)</strong> Peak searching module (CV-2)</figcaption>
+  </figure>
+  <figure style="width: 49%;">
+    <img src="Image_Set/RC_DMAB.png" alt="(b) Randles–Ševčík analysis module (CV-3)">
+    <figcaption><strong>(b)</strong> Randles–Ševčík analysis module (CV-3)</figcaption>
+  </figure>
+</div>
+
 
 ## Step Techniques Structure: CA Module
 
@@ -266,10 +280,25 @@ This function generates plots of applied potential vs. time and corresponding cu
 
 This function utilizes the Cottrell equation to calculate the diffusion coefficient. The Cottrell equation describes the current response of an electrochemical cell as a function of time, providing a means to determine the diffusion coefficient from chronoamperometric data. The software plots the Cottrell equation, allowing users to input parameters such as interval, \( n \), \( A \), and \( C_0 \), and calculates the diffusion coefficient. The outputs include a figure of the Cottrell equation plot and a table of diffusion coefficients.
 
+<!--
 ![(a) Plotting and Gaussian Filtering I vs t](Image_Set/CAIt_D.png){ width=45% }
 ![(b) Diffusion coefficient regression section](Image_Set/CAp2_D.png){ width=45% }
 
-![Example of figures in Envismetrics(CA Module): (a) Peak Searching module, (b) Randles–Ševčík Analysis Module.]
+![Example of figures in Envismetrics(CA Module): (a) , (b).]
+-->
+
+<div style="display: flex; gap: 10px;">
+  <figure style="width: 49%;">
+    <img src="Image_Set/CAIt_D.png" alt="(a) Current-time curve plotting (CA-1)">
+    <figcaption><strong>(a)</strong> Current–time curve plotting module (CA-1)</figcaption>
+  </figure>
+  <figure style="width: 49%;">
+    <img src="Image_Set/CAp2_D.png" alt="(b) Diffusion coefficient regression module (CA-2)">
+    <figcaption><strong>(b)</strong> Diffusion coefficient regression module (CA-2)</figcaption>
+  </figure>
+</div>
+
+
 
 ## Applications in Research
 
