@@ -183,8 +183,6 @@ In *Envismetrics*, users can select potential values to automatically generate t
   <strong>Figure 2.</strong> (a) Levich plot module, (b) Levich analysis module.
 </figcaption>
 
-> **Figure: Example outputs from the Envismetrics HDV module.** (a) Raw Levich plot showing current vs. $\omega^{1/2}$. (b) Extracted slope and calculated diffusion coefficients for selected potentials. These visual outputs help users identify steady-state plateaus and assess electrochemical transport behavior.
-
 ## Cyclic Voltammetry (CV) Module
 
 ### Function 1: Plotting and Gaussian Filtering
