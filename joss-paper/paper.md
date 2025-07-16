@@ -119,7 +119,7 @@ Envismetrics supports commonly used plain-text electrochemical data formats, inc
 
 ![Data Import Window: Users can easily drag and drop or select their experimental data for quick and straightforward import.](Image_Set/1.png){ width=80% }
 
-## Hydrodynamic Voltammetry (HDV) Module
+## Hydrodynamic Voltammetry (HDV) - Rotating Disc Electrode (RDE) Module
 
 ### Function 1: Plotting and Gaussian Filtering
 
