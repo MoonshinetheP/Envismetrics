@@ -157,7 +157,23 @@ In *Envismetrics*, users can select potential values to automatically generate t
 >
 > This diagnostic approach does **not** suggest physical dependence of $D$ on potential, but rather supports informed analysis based on electrochemical theory.
 
+![(a) Levich plot module](Image_Set/L_DMAB.png){ width=45% }
+![(b) Levich analysis module](Image_Set/LA_D.png){ width=45% }
 
+![Example of figures in Envismetrics(HDV Module): (a) Levich plot module, (b) Levich analysis module.]
+
+<div style="display: flex; gap: 10px;">
+  <figure style="width: 49%;">
+    <img src="Image_Set/L_DMAB.png" alt="(a) Levich plot module" width="100%" />
+    <figcaption><strong>(a)</strong> Levich plot module</figcaption>
+  </figure>
+  <figure style="width: 49%;">
+    <img src="Image_Set/LA_D.png" alt="(b) Levich analysis module" width="100%" />
+    <figcaption><strong>(b)</strong> Levich analysis module</figcaption>
+  </figure>
+</div>
+
+> **Figure: Example outputs from the Envismetrics HDV module.** (a) Raw Levich plot showing current vs. $\omega^{1/2}$. (b) Extracted slope and calculated diffusion coefficients for selected potentials. These visual outputs help users identify steady-state plateaus and assess electrochemical transport behavior.
 
 ## Cyclic Voltammetry (CV) Module
 
@@ -231,6 +247,11 @@ $$
 
 where peak potentials and corresponding peak currents are identified using Function 2: Peak Searching, which applies max value and derivative-based detection algorithms.
 
+![(a) Peak Searching module](Image_Set/CVPS_D.png){ width=45% }
+![(b) Randles–Ševčík Analysis Module](Image_Set/RC_DMAB.png){ width=45% }
+
+![Example of figures in Envismetrics(CV Module): (a) Peak Searching module, (b) Randles–Ševčík Analysis Module.]
+
 ## Step Techniques Structure: CA Module
 
 ### Function 1: Plotting and Gaussian Filtering
@@ -241,12 +262,10 @@ This function generates plots of applied potential vs. time and corresponding cu
 
 This function utilizes the Cottrell equation to calculate the diffusion coefficient. The Cottrell equation describes the current response of an electrochemical cell as a function of time, providing a means to determine the diffusion coefficient from chronoamperometric data. The software plots the Cottrell equation, allowing users to input parameters such as interval, \( n \), \( A \), and \( C_0 \), and calculates the diffusion coefficient. The outputs include a figure of the Cottrell equation plot and a table of diffusion coefficients.
 
-![(a) Levich plot module](Image_Set/L_DMAB.png){ width=45% }
-![(b) Levich analysis module](Image_Set/LA_D.png){ width=45% }
-![(c) Peak Searching module](Image_Set/CVPS_D.png){ width=45% }
-![(d) Randles–Ševčík Analysis Module](Image_Set/RC_DMAB.png){ width=45% }
+![(a) Plotting and Gaussian Filtering I vs t](Image_Set/CAIt_D.png){ width=45% }
+![(b) Diffusion coefficient regression section](Image_Set/CAp2_D.png){ width=45% }
 
-![Example of figures in Envismetrics: (a) Levich plot module, (b) Levich analysis module, (c) Peak Searching module, (d) Randles–Ševčík Analysis Module.]
+![Example of figures in Envismetrics(CA Module): (a) Peak Searching module, (b) Randles–Ševčík Analysis Module.]
 
 ## Applications in Research
 
