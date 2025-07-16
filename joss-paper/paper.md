@@ -128,13 +128,13 @@ The Gaussian filter works by convolving the current signal with a normal distrib
 
 Levich and Koutecky–Levich (KL) analyses are commonly used for studying electrochemical reactions under laminar flow convection conditions [@masa2014koutecky]. *Envismetrics* streamlines these workflows by automatically generating both Levich and KL plots from experimental data.
 
-Levich analysis is primarily used to determine the diffusion coefficient \( D \) under mass-transport-limited conditions. The classical Levich equation is:
+Levich analysis is primarily used to determine the diffusion coefficient $D$ under mass-transport-limited conditions. The classical Levich equation is:
 
 $$
 i_L = 0.62\, n F A D^{2/3} \omega^{1/2} \nu^{-1/6} C
 $$
 
-Koutecky–Levich analysis expands on this by incorporating kinetic limitations and is often used to estimate the standard rate constant \( k^0 \). It retains the same diffusion-related slope as the Levich plot. The KL equation is:
+Koutecky–Levich analysis expands on this by incorporating kinetic limitations and is often used to estimate the standard rate constant $k_0$. It retains the same diffusion-related slope as the Levich plot. The KL equation is:
 
 $$
 \frac{1}{i} = \frac{1}{i_k} + \frac{1}{i_L}
@@ -147,6 +147,16 @@ $$
 $$
 
 In *Envismetrics*, users can select potential values to automatically generate these plots, with slopes and derived kinetic parameters \( D \) calculated dynamically for each potential. This feature enables users to explore the potential dependence of apparent kinetics and identify plateaus where mass transport dominates. Users should apply Levich/KL analyses only in regions where steady-state limiting currents are observed. *Envismetrics* allows flexible selection of such regions, but interpretation should follow electrochemical theory to avoid applying these models in inappropriate potential windows.
+
+> **Note**: While *Envismetrics* displays diffusion coefficients calculated at multiple potentials, this is **not intended to imply that $D$ varies with potential**. Rather, each $D$ value is obtained by applying the **definitional form** of the Levich equation at a specific potential. In practice, current values — even within the limiting current plateau — often fluctuate slightly due to experimental noise, convection, or surface effects.  
+>
+> By plotting $D$ across a range of potentials, users can:
+> - Visually identify regions where $D$ remains consistent;
+> - Average $D$ values across the plateau for better statistical reliability;
+> - Avoid misinterpretation caused by using a single-point calculation.
+>
+> This diagnostic approach does **not** suggest physical dependence of $D$ on potential, but rather supports informed analysis based on electrochemical theory.
+
 
 
 ## Cyclic Voltammetry (CV) Module
@@ -173,7 +183,7 @@ $$
 
 ### Function 4: Rate Constant Calculation
 
-The rate constant is calculated using a dimensionless kinetic parameter, \(\Psi\). This parameter is a normalized value that represents the rate constant (\(k_0\)) in relation to various factors such as the diffusion coefficient and the number of electrons transferred. This method was originally proposed by Nicholson [@nicholson1965theory] and later extended by Lavagnini et al. [@lavagnini2004extended].
+The rate constant is calculated using a dimensionless kinetic parameter, $\Psi$. This parameter is a normalized value that represents the rate constant $k_0$ in relation to various factors such as the diffusion coefficient and the number of electrons transferred. This method was originally proposed by Nicholson [@nicholson1965theory] and later extended by Lavagnini et al. [@lavagnini2004extended].
 
 ### Function 5: Tafel Analysis Module
 
