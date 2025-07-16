@@ -309,6 +309,27 @@ In *Envismetrics*, users can input experimental parameters such as the fitting i
   </figure>
 </div>
 
+## Planned Features and Future Work
+
+We are actively developing Envismetrics to improve usability, flexibility, and scientific rigor across all modules. Upcoming features include:
+
+- **CV Module**
+  - Fully automated peak detection across voltammetric cycles.
+  - Regime diagnostics based on scan rate normalization (e.g., $i_p$ vs. $\sqrt{v}$ scaling) to identify deviations from planar diffusion behavior, preventing misuse of Randles–Ševčík or Tafel analyses.
+  - Option for users to automatically discard non-conforming voltammograms to ensure dataset consistency.
+  - Input parameter validation for key variables (e.g., electrode radius, diffusion coefficients, concentration) with real-time warnings for unphysical or inconsistent entries.
+
+- **HDV (RDE) Module**
+  - Automatic detection of limiting current plateaus to improve Levich and Koutecký–Levich regression accuracy.
+  - Enhanced fitting diagnostics with feedback on linearity and potential outliers.
+
+- **Global Features**
+  - Additional filtering methods (e.g., Savitzky–Golay, Gaussian smoothing) for improved preprocessing of noisy data.
+  - Interactive, user-defined fitting regions in regression plots for more flexible curve fitting workflows.
+  - Export of processed results and figures in structured formats (CSV, JSON) to support reproducibility and downstream analysis.
+  - Early-stage development of an **EIS analysis module**, enabling impedance spectroscopy integration with CV/CA workflows.
+
+These features are currently under active development and will be released progressively. We welcome user feedback and contributions via GitHub Issues and Pull Requests.
 
 
 ## Applications in Research
