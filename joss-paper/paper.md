@@ -200,7 +200,7 @@ $$
 For systems with large $\Delta E_p$ or highly irreversible behavior, Envismetrics also supports the Klingler–Kochi formulation:
 
 $$
-k^0 = 2.18 \cdot \left( \frac{D \cdot n \cdot \nu \cdot F}{R \cdot T} \right)^{1/2} \cdot \exp \left( -\alpha \cdot \frac{2nF \Delta E_p}{RT} \right)
+\Psi = \frac{2.18}{\alpha \pi} \exp \left( - \frac{\alpha n \Delta E_p F}{2RT} \right)
 $$
 
 ---
