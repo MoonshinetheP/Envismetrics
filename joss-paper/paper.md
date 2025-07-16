@@ -179,6 +179,9 @@ In *Envismetrics*, users can select potential values to automatically generate t
     <figcaption><strong>(b)</strong> Levich analysis module</figcaption>
   </figure>
 </div>
+<figcaption style="width: 100%; text-align: center; margin-top: 10px;">
+  <strong>Figure 2.</strong> (a) Levich plot module, (b) Levich analysis module.
+</figcaption>
 
 > **Figure: Example outputs from the Envismetrics HDV module.** (a) Raw Levich plot showing current vs. $\omega^{1/2}$. (b) Extracted slope and calculated diffusion coefficients for selected potentials. These visual outputs help users identify steady-state plateaus and assess electrochemical transport behavior.
 
@@ -273,6 +276,9 @@ where peak potentials and corresponding peak currents are identified using Funct
   </figure>
 </div>
 
+<figcaption style="width: 100%; text-align: center; margin-top: 10px;">
+  <strong>Figure 3.</strong> Visual outputs from the CV module: (a) Peak searching module (CV-2), (b) Randles–Ševčík analysis module (CV-3).
+</figcaption>
 
 ## Step Techniques Structure: CA Module
 
@@ -308,6 +314,10 @@ In *Envismetrics*, users can input experimental parameters such as the fitting i
     <figcaption><strong>(b)</strong> Diffusion coefficient regression module (CA-2)</figcaption>
   </figure>
 </div>
+
+<figcaption style="width: 100%; text-align: center; margin-top: 10px;">
+  <strong>Figure 4.</strong> Output visualization from the CA module: (a) Current–time curve plotting module (CA-1), (b) Diffusion coefficient regression module based on Cottrell equation (CA-2).
+</figcaption>
 
 ## Planned Features and Future Work
 
