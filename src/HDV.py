@@ -35,7 +35,7 @@ def reorder(filename):
         return -1  # You can use any default value or treatment
 
 def extract_rpm(filename):
-    pattern = r'(?:^|_)(\d+rpm)\.'
+    pattern = r'(?:^|_)(\d+)(?=rpm)(?:rpm)?(?:_|\.|$)'
     match = re.search(pattern, filename)
     if match:
         return match.group(1)
@@ -75,11 +75,11 @@ class HDV(BaseModule):
             file = real_file_path[f]
             if not os.path.isfile(file):
                 continue
-            print(f)
+            print("filename:", f)
             rpm = extract_rpm(f)
             if rpm is None:
                 continue
-            print(rpm)
+            print("rpm:", rpm)
             if file.endswith(".xlsx"):
                 csv_file = file + ".csv"
                 if os.path.exists(csv_file):
@@ -95,82 +95,115 @@ class HDV(BaseModule):
         print("data: ", len(data))
         return data
 
+    def check_columns(self, data):
+        cols = ['WE(1).Current (A)', 'WE(1).Potential (V)']
+        print("check_columns:", cols)
+        missing_cols = []
+        for rpm, df in data.items():
+            for col in cols:
+                if col not in df.columns:
+                    missing_cols.append(col)
+        print("missing_cols:", missing_cols)
+        if len(missing_cols) > 0:
+            return "error: Missing columns: " + ", ".join(missing_cols)
+        return ''
 
     def step1(self, sigma=10):
         data = self.read_data()
+        status_msg = self.check_columns(data)
+        if status_msg == '':
+            try:
+                for rpm, df in data.items():
+                    E = df['WE(1).Potential (V)']
+                    I = df['WE(1).Current (A)']
+                    print("length of E:", len(E))
+                    plt.scatter(E, I, label=rpm, s=1)
+                plt.xlabel('Applied potential/V')
+                plt.ylabel('Current/A')
+                plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+                #plt.xlim()
+                # plt.ylim(-0.0002,0.0003)
+                plt.legend()
+                # plt.grid()
+                # plt.show()
+                to_file1 = os.path.join(self.datapath, "step1_p1.png")
+                plt.savefig(to_file1)
+                plt.close()
 
-        for rpm, df in data.items():
-            E = df['WE(1).Potential (V)']
-            I = df['WE(1).Current (A)']
-            print("length of E:", len(E))
-            plt.scatter(E, I, label=rpm, s=1)
-        plt.xlabel('Applied potential/V')
-        plt.ylabel('Current/A')
-        plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-        #plt.xlim()
-        # plt.ylim(-0.0002,0.0003)
-        plt.legend()
-        # plt.grid()
-        # plt.show()
-        to_file1 = os.path.join(self.datapath, "step1_p1.png")
-        plt.savefig(to_file1)
-        plt.close()
+                # plot figure modlue with Gaussian filter
 
-        # plot figure modlue with Gaussian filter
+                # Create an empty DataFrame to store the data
+                combined_data = pd.DataFrame()
 
-        # Create an empty DataFrame to store the data
-        combined_data = pd.DataFrame()
+                # Define the standard deviation (sigma) for the Gaussian filter
 
-        # Define the standard deviation (sigma) for the Gaussian filter
+                for rpm, df in data.items():
+                    E = df['Potential applied (V)']
+                    I = df['WE(1).Current (A)']
 
-        for rpm, df in data.items():
-            E = df['Potential applied (V)']
-            I = df['WE(1).Current (A)']
+                    # Apply the Gaussian filter to the 'Current (A)'
+                    smoothed_I = gaussian_filter(I, sigma=sigma)
+                    print("length of E:", len(E))
+                    plt.scatter(E, smoothed_I, label=rpm, s=1)
 
-            # Apply the Gaussian filter to the 'Current (A)'
-            smoothed_I = gaussian_filter(I, sigma=sigma)
-            print("length of E:", len(E))
-            plt.scatter(E, smoothed_I, label=rpm, s=1)
+                    # Create a new DataFrame for the current RPM
+                    rpm_data = pd.DataFrame({'Potential (V)' + rpm: E, 'Current (A)' + rpm: I})
+                    # Concatenate the data for this RPM to the right of the combined_data DataFrame
+                    combined_data = pd.concat([combined_data, rpm_data], axis=1)
 
-            # Create a new DataFrame for the current RPM
-            rpm_data = pd.DataFrame({'Potential (V)' + rpm: E, 'Current (A)' + rpm: I})
-            # Concatenate the data for this RPM to the right of the combined_data DataFrame
-            combined_data = pd.concat([combined_data, rpm_data], axis=1)
-
-        plt.xlabel('Applied potential/V')
-        plt.ylabel('Current/A')
-        plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
-        # plt.xlim(-1.0,0.5)
-        # plt.ylim(-0.00006, 0.00008)
-        plt.legend()
-        # plt.grid()
-        # plt.show()
-        to_file2 = os.path.join(self.datapath, "step1_p2.png")
-        plt.savefig(to_file2)
-        plt.close()
+                plt.xlabel('Applied potential/V')
+                plt.ylabel('Current/A')
+                plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+                # plt.xlim(-1.0,0.5)
+                # plt.ylim(-0.00006, 0.00008)
+                plt.legend()
+                # plt.grid()
+                # plt.show()
+                to_file2 = os.path.join(self.datapath, "step1_p2.png")
+                plt.savefig(to_file2)
+                plt.close()
+            except Exception as e:
+                status_msg = str(e)
 
         data = self.res_data
         if 'HDV' not in data.keys():
             data['HDV'] = {}
-        data['HDV']['form1'] = {
-            'status': 'done',
-            'input': {
-                'sigma': sigma,
-            },
-            'output': {
-                'file1': to_file1.split("/")[-1],
-                'file2': to_file2.split("/")[-1],
-                # 'img1': '/outputs/version_test_CV/form2.jpg',
-            }
-        }
-        self.save_result_data(data)
 
-        return {
-            'status': True,
-            'version': self.version,
-            'message': 'Success',
-            'data': data
-        }
+        if status_msg == '':
+            data['HDV']['form1'] = {
+                'status': 'done',
+                'input': {
+                    'sigma': sigma,
+                },
+                'output': {
+                    'file1': to_file1.split("/")[-1],
+                    'file2': to_file2.split("/")[-1],
+                    # 'img1': '/outputs/version_test_CV/form2.jpg',
+                }
+            }
+            self.save_result_data(data)
+
+            return {
+                'status': True,
+                'version': self.version,
+                'message': 'Success',
+                'data': data
+            }
+        else:
+            data['HDV']['form1'] = {
+                'status': status_msg,
+                'input': {
+                    'sigma': sigma,
+                }
+            }
+            self.save_result_data(data)
+
+            return {
+                'status': False,
+                'version': self.version,
+                'message': status_msg,
+                'data': data
+            }
 
     def _step2_1_fig1(self, data, all_params ):
         input_n = int(all_params['input_N'])
@@ -413,22 +446,46 @@ class HDV(BaseModule):
     def step2_1(self, all_params):
         """ Step 2 Levich Analysis Moudle V2 """
         data = self.res_data
-        to_file1, excel_file = self._step2_1_fig1(data, all_params)
-        to_file2 = self._step2_1_fig2(data, all_params)
+        status_msg = ''
+        try:
+            to_file1, excel_file = self._step2_1_fig1(data, all_params)
+            to_file2 = self._step2_1_fig2(data, all_params)
+        except Exception as e:
+            status_msg = str(e)
 
         if 'HDV' not in data.keys():
             data['HDV'] = {}
-        data['HDV']['form2_1'] = {
-            'status': 'done',
-            'input': all_params,
-            'output': {
-                'file1': to_file1.split("/")[-1],
-                'file2': to_file2.split("/")[-1],
-                'excel_file': excel_file.split("/")[-1],
-                # 'img1': '/outputs/version_test_CV/form2.jpg',
+
+        if status_msg == '':
+            data['HDV']['form2_1'] = {
+                'status': 'done',
+                'input': all_params,
+                'output': {
+                    'file1': to_file1.split("/")[-1],
+                    'file2': to_file2.split("/")[-1],
+                    'excel_file': excel_file.split("/")[-1],
+                    # 'img1': '/outputs/version_test_CV/form2.jpg',
+                }
             }
-        }
-        self.save_result_data(data)
+            self.save_result_data(data)
+            return {
+                'status': True,
+                'version': self.version,
+                'message': 'Success',
+                'data': data
+            }
+        else:
+            data['HDV']['form2_1'] = {
+                'status': status_msg,
+                'input': all_params,
+            }
+            self.save_result_data(data)
+            return {
+                'status': False,
+                'version': self.version,
+                'message': status_msg,
+                'data': data
+            }
 
     def _step2_2_fig1(self, data, all_params):
         input_n = int(all_params['input_N'])
@@ -688,22 +745,46 @@ class HDV(BaseModule):
         """ Step 2 Koutecky-Levich Analysis Moudle """
 
         data = self.res_data
-        to_file1, excel_file = self._step2_2_fig1(data, all_params)
-        to_file2 = self._step2_2_fig2(data, all_params)
+        status_msg = ''
+        try:
+            to_file1, excel_file = self._step2_2_fig1(data, all_params)
+            to_file2 = self._step2_2_fig2(data, all_params)
+        except Exception as e:
+            status_msg = str(e)
 
         if 'HDV' not in data.keys():
             data['HDV'] = {}
-        data['HDV']['form2_2'] = {
-            'status': 'done',
-            'input': all_params,
-            'output': {
-                'file1': to_file1.split("/")[-1],
-                'file2': to_file2.split("/")[-1],
-                'excel_file': excel_file if excel_file.startswith("/") else '/' + excel_file,
-                # 'img1': '/outputs/version_test_CV/form2.jpg',
+
+        if status_msg == '':
+            data['HDV']['form2_2'] = {
+                'status': 'done',
+                'input': all_params,
+                'output': {
+                    'file1': to_file1.split("/")[-1],
+                    'file2': to_file2.split("/")[-1],
+                    'excel_file': excel_file if excel_file.startswith("/") else '/' + excel_file,
+                    # 'img1': '/outputs/version_test_CV/form2.jpg',
+                }
             }
-        }
-        self.save_result_data(data)
+            self.save_result_data(data)
+            return {
+                'status': True,
+                'version': self.version,
+                'message': status_msg,
+                'data': data
+            }
+        else:
+            data['HDV']['form2_2'] = {
+                'status': status_msg,
+                'input': all_params,
+            }
+            self.save_result_data(data)
+            return {
+                'status': False,
+                'version': self.version,
+                'message': status_msg,
+                'data': data
+            }
 
 if __name__ == '__main__':
     hdv = HDV('version_0423_111216', "uploads/version_0423_111216/fileinfo_version_0423_111216.json")

@@ -296,6 +296,9 @@ def check(module, version):
                 # print('11111')
                 data = {'result': 'done'}
                 return jsonify(data)
+            else:
+                data = {'result': data[module][f]['status']}
+                return jsonify(data)
         except Exception as e:
             # print('22222')
             data = {'result': 'processing'}
@@ -311,18 +314,17 @@ def check(module, version):
             return jsonify(data)
 
         try:
-            if data[module][f]['status'] == 'done':
-                data = {'result': 'done'}
-                return jsonify(data)
+            data = {'result': data[module][f]['status']}
+            return jsonify(data)
+
         except Exception as e:
             data = {'result': 'processing'}
             return jsonify(data)
     elif module.upper() == 'CA':
         f = 'form{}'.format(step-1)
         try:
-            if data[module][f]['status'] == 'done':
-                data = {'result': 'done'}
-                return jsonify(data)
+            data = {'result': data[module][f]['status']}
+            return jsonify(data)
         except Exception as e:
             data = {'result': 'processing'}
             return jsonify(data)

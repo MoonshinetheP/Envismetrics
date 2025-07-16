@@ -419,6 +419,17 @@ class CV(BaseModule):
         print("data: ", len(data))
         return data
 
+    def check_columns(self, data):
+        cols = ['WE(1).Current (A)', 'WE(1).Potential (V)', 'Scan']
+        missing_cols = []
+        for scan_rate, df in data.items():
+            for col in cols:
+                if col not in df.columns:
+                    missing_cols.append(col)
+        if len(missing_cols) > 0:
+            return "error: Missing columns: " + ", ".join(missing_cols)
+        return ''
+
     def start1_figure(self, data, apply_sigma=False, all_params = {}):
         cycle = int( all_params['cycle'] )
         sigma = float( all_params['sigma'] )
@@ -484,16 +495,22 @@ class CV(BaseModule):
         :return:
         """
         sigma = float(all_params['sigma'])
+        status_msg = ''
 
         data = self.read_data()
         if data is None:
-            return {
-                'status': False,
-                'message': 'One or more files are not allowed.'
-            }
+            status_msg = 'error: one or more files are not allowed.'
 
-        to_file1, to_file3 = self.start1_figure(data, apply_sigma=False, all_params=all_params)
-        to_file2, _ = self.start1_figure(data, apply_sigma=True, all_params=all_params)
+        if status_msg == '':
+            status_msg = self.check_columns(data)
+
+        if status_msg == '':
+            try:
+                to_file1, to_file3 = self.start1_figure(data, apply_sigma=False, all_params=all_params)
+                to_file2, _ = self.start1_figure(data, apply_sigma=True, all_params=all_params)
+            except Exception as e:
+                status_msg = str(e)
+
 
         data_file = os.path.join('outputs', self.version, 'data.json')
         if os.path.exists(data_file):
@@ -504,26 +521,43 @@ class CV(BaseModule):
         if 'CV' not in data.keys():
             data['CV'] = {}
 
-        all_params['uploaded_files'] = []
-        data['CV']['form1'] = {
-            'status': 'done',
-            'input': all_params,
-            'output': {
-                'file1': to_file1.split("/")[-1],
-                'file2': to_file2.split("/")[-1],
-                'file3': to_file3.split("/")[-1],
+        if status_msg == '':
+            all_params['uploaded_files'] = []
+            data['CV']['form1'] = {
+                'status': 'done',
+                'input': all_params,
+                'output': {
+                    'file1': to_file1.split("/")[-1],
+                    'file2': to_file2.split("/")[-1],
+                    'file3': to_file3.split("/")[-1],
+                }
             }
-        }
-        with open(data_file, 'w') as f:
-            f.write(json.dumps(data))
-            print("saved to: {}".format(data_file))
+            with open(data_file, 'w') as f:
+                f.write(json.dumps(data))
+                print("saved to: {}".format(data_file))
 
-        return {
-            'status': True,
-            'version': self.version,
-            'message': 'Success',
-            'data': data
-        }
+            return {
+                'status': True,
+                'version': self.version,
+                'message': 'Success',
+                'data': data
+            }
+        else:
+            all_params['uploaded_files'] = []
+            data['CV']['form1'] = {
+                'status': status_msg,
+                'input': all_params
+            }
+            with open(data_file, 'w') as f:
+                f.write(json.dumps(data))
+                print("saved to: {}".format(data_file))
+
+            return {
+                'status': False,
+                'version': self.version,
+                'message': status_msg,
+                'data': data
+            }
 
     def start2_prepare(self, data, method, p1_start, p1_end, p2_start, p2_end):
         Ef1 = []
@@ -689,643 +723,716 @@ class CV(BaseModule):
         return img_path
 
     def start2(self, all_params):
-        print(all_params)
+        status_msg = ''
+        try:
+            print(all_params)
 
 
-        method = all_params['method']
-        # peak_range_top = all_params['peak_range_top']
-        # peak_range_bottom = all_params['peak_range_bottom']
+            method = all_params['method']
+            # peak_range_top = all_params['peak_range_top']
+            # peak_range_bottom = all_params['peak_range_bottom']
 
-        peak_info = {}
-        peak_range_ox = ast.literal_eval(all_params['peak_range_top']) # [(-1, -0.70), (0, 0.2), (0.25, 0.5)]
-        peak_range_re = ast.literal_eval(all_params['peak_range_bottom'])  #[(-0.925, -0.75), (0.0, 0.125), (0.125, 0.25)]
+            peak_info = {}
+            peak_range_ox = ast.literal_eval(all_params['peak_range_top']) # [(-1, -0.70), (0, 0.2), (0.25, 0.5)]
+            peak_range_re = ast.literal_eval(all_params['peak_range_bottom'])  #[(-0.925, -0.75), (0.0, 0.125), (0.125, 0.25)]
 
-        discard_scan_start = ast.literal_eval(all_params['scan_rate_from'])
-        discard_scan_end = ast.literal_eval(all_params['scan_rate_after'])
+            discard_scan_start = ast.literal_eval(all_params['scan_rate_from'])
+            discard_scan_end = ast.literal_eval(all_params['scan_rate_after'])
 
-        cycle_range_input = ast.literal_eval(all_params['cycle_range'])
-        cycle_range = range(cycle_range_input[0], cycle_range_input[1])
+            cycle_range_input = ast.literal_eval(all_params['cycle_range'])
+            cycle_range = range(cycle_range_input[0], cycle_range_input[1])
 
-        example_scan_rate = all_params['example_scan'] # default 20
-        example_cycle  = all_params['example_cycle'] # default 9
+            example_scan_rate = all_params['example_scan'] # default 20
+            example_cycle  = all_params['example_cycle'] # default 9
 
-        sigma = float(self.res_data['CV']['form1']['input']['sigma'])
+            sigma = float(self.res_data['CV']['form1']['input']['sigma'])
 
-        # read data
-        with open(self.files_info, 'r') as f:
-            info_list = json.loads(f.read())
-        files = []
-        real_file_path = {}
-        for info in info_list:
-            # input your file name here and switch rpm in to %d
-            f = info['filename']
-            ef = info['existed_filename']
-            if not os.path.isfile(ef):
-                continue
-            files.append(f)
-            real_file_path[f] = ef
-        files = sorted(files, key=Search_scan_rate)
-        device = f'Autolab'
-        if device == 'Autolab':
-            Filter_files = [file for file in files if file.endswith('.xlsx') or file.endswith('.csv')]
-        elif device == 'EClab':
-            Filter_files = [file for file in files if file.endswith('.txt')]
-        else:
-            Filter_files = []
-            print('device not found in library')
-        file_template = os.path.splitext(create_file_template_CV(Filter_files[0]))[0]
-        data_list = []
-        myglobals = {}
-        for file in Filter_files:
-            scan_rate = Search_scan_rate(file)
-            df = read_auto_lab_file(real_file_path[file])
-            var_name = file_template % scan_rate
-            myglobals[var_name] = df
-            data_list.append(var_name)
-            print(var_name)
+            # read data
+            with open(self.files_info, 'r') as f:
+                info_list = json.loads(f.read())
+            files = []
+            real_file_path = {}
+            for info in info_list:
+                # input your file name here and switch rpm in to %d
+                f = info['filename']
+                ef = info['existed_filename']
+                if not os.path.isfile(ef):
+                    continue
+                files.append(f)
+                real_file_path[f] = ef
+            files = sorted(files, key=Search_scan_rate)
+            device = f'Autolab'
+            if device == 'Autolab':
+                Filter_files = [file for file in files if file.endswith('.xlsx') or file.endswith('.csv')]
+            elif device == 'EClab':
+                Filter_files = [file for file in files if file.endswith('.txt')]
+            else:
+                Filter_files = []
+                print('device not found in library')
+            file_template = os.path.splitext(create_file_template_CV(Filter_files[0]))[0]
+            data_list = []
+            myglobals = {}
+            for file in Filter_files:
+                scan_rate = Search_scan_rate(file)
+                df = read_auto_lab_file(real_file_path[file])
+                var_name = file_template % scan_rate
+                myglobals[var_name] = df
+                data_list.append(var_name)
+                print(var_name)
 
-        for z in range(len(peak_range_ox)):
-            peak_info[f'Ef{z}'] = []
-            peak_info[f'DelE0{z}'] = []
-            peak_info[f'Ea{z}'] = []
-            peak_info[f'Ec{z}'] = []
-            peak_info[f'Ia{z}'] = []
-            peak_info[f'Ic{z}'] = []
-            peak_info[f'Scan_Rate{z}'] = []
+            for z in range(len(peak_range_ox)):
+                peak_info[f'Ef{z}'] = []
+                peak_info[f'DelE0{z}'] = []
+                peak_info[f'Ea{z}'] = []
+                peak_info[f'Ec{z}'] = []
+                peak_info[f'Ia{z}'] = []
+                peak_info[f'Ic{z}'] = []
+                peak_info[f'Scan_Rate{z}'] = []
 
-            # Create a new figure for each z loop
-            print(f'\n\033[1mFigure Set for Peak{z + 1}:\033[0m')
+                # Create a new figure for each z loop
+                print(f'\n\033[1mFigure Set for Peak{z + 1}:\033[0m')
+                plt.figure()
+
+                # Determine the slice based on the variable
+                selected_data_list = data_list[discard_scan_start[z]:len(data_list) - discard_scan_end[z]]
+                print("\033[1mGoing to process the following files:\033[0m")
+                for file in selected_data_list:
+                    print(file)
+                print("\n")
+
+                # Find peak position
+                for var_name in selected_data_list:
+                    df = myglobals[var_name]
+                    print(var_name)
+                    scan_rate = Search_scan_rate(var_name)
+                    name = str(scan_rate) + "mV"
+
+                    # Initialize lists for this file
+                    Ea_j = []
+                    Ec_j = []
+                    Ia_j = []
+                    Ic_j = []
+
+                    for i in cycle_range:
+                        cycle_df = df[df['Scan'] == i]
+                        if len(cycle_df) == 0:
+                            continue
+                        Ui = cycle_df['WE(1).Potential (V)']
+                        Ii = cycle_df['WE(1).Current (A)']
+                        Ui = np.array(Ui)
+                        Ii = np.array(Ii)
+
+                        # Separate top and bottom
+                        upperU, lowerU, upperI, lowerI = separater(Ui, Ii, min(Ui), max(Ui))
+
+                        # Apply Gaussian filter (optional)
+                        apply_gaussian_filter = False  # Set to True to apply the filter, False to not apply the filter
+
+                        if apply_gaussian_filter:
+                            smoothed_upperI = gaussian_filter(upperI, sigma=1)
+                            smoothed_lowerI = gaussian_filter(lowerI, sigma=1)
+                        else:
+                            smoothed_upperI = upperI
+                            smoothed_lowerI = lowerI
+
+                        # Input range of first peak
+                        top_x, top_y = find_max(upperU, smoothed_upperI, peak_range_ox[z][0], peak_range_ox[z][1])
+                        bottom_x, bottom_y = find_min(lowerU, smoothed_lowerI, peak_range_re[z][0], peak_range_re[z][1])
+                        DelE02i = top_x - bottom_x
+                        Ef2i = (top_x + bottom_x) / 2
+
+                        peak_info[f'Ea{z}'].append(top_x)
+                        Ea_j.append(top_x)
+                        peak_info[f'Ia{z}'].append(find_y(upperU, smoothed_upperI, top_x))
+                        Ia_j.append(find_y(upperU, smoothed_upperI, top_x))
+                        peak_info[f'Ec{z}'].append(bottom_x)
+                        Ec_j.append(bottom_x)
+                        peak_info[f'Ic{z}'].append(find_y(lowerU, smoothed_lowerI, bottom_x))
+                        Ic_j.append(find_y(lowerU, smoothed_lowerI, bottom_x))
+
+                        peak_info[f'DelE0{z}'].append(DelE02i)
+                        peak_info[f'Ef{z}'].append(Ef2i)
+
+                        peak_info[f'Scan_Rate{z}'].append(scan_rate)
+
+
+
+            # ==============================
+            now = datetime.now()
+            formatted_time = now.strftime("%Y-%m-%d %H:%M:%S")
+            print("Done:", formatted_time)
+
+            def show_info(peak_info, n=5):
+                for key, values in peak_info.items():
+                    # Check if the list is shorter than n, if so, adjust n to the length of the list
+                    display_length = min(len(values), n)
+                    print(f'{key}: {[len(values)]} {values[:display_length]}')
+
+            # Call the function to print the head of peak_info
+            show_info(peak_info)
+
+
+            # Dictionary to store the mean values of Ef
+            mean_Ef = {}
+
+            for i in range(len(peak_range_ox)):
+                Ef = np.mean(peak_info[f'Ef{i}'])
+                mean_Ef[f'Ef{i + 1}'] = Ef
+
+            # Print the results
+            for key, value in mean_Ef.items():
+                print(f"{key}: {value}")
+
+
+            ## show all searched peaks on the CV plot figure
             plt.figure()
+            # Plot the CV data
+            for data_i in data_list:
+                df = myglobals[data_i]  # Access the DataFrame using the variable name
+                print(data_i)
+                U = df['WE(1).Potential (V)']
+                I = df['WE(1).Current (A)']
+                scan_rate = Search_scan_rate(data_i)  # Extract scan rate from the variable name
+                plt.scatter(U, I, label=f'{scan_rate} mV', s=1, c='#1f77b4')
 
-            # Determine the slice based on the variable
-            selected_data_list = data_list[discard_scan_start[z]:len(data_list) - discard_scan_end[z]]
-            print("\033[1mGoing to process the following files:\033[0m")
-            for file in selected_data_list:
-                print(file)
-            print("\n")
+            # Plot the peak information
+            for i in range(len(peak_range_ox)):
+                plt_data_Ea = peak_info[f'Ea{i}']
+                plt_data_Ec = peak_info[f'Ec{i}']
+                plt_data_Ia = peak_info[f'Ia{i}']
+                plt_data_Ic = peak_info[f'Ic{i}']
+                plt.scatter(plt_data_Ea, plt_data_Ia, s=10, c='r')
+                plt.scatter(plt_data_Ec, plt_data_Ic, s=10, c='r')
 
-            # Find peak position
-            for var_name in selected_data_list:
+            plt.xlabel('Applied potential/V')
+            plt.ylabel('Current/A')
+            plt.legend()
+            # plt.show()
+            to_file1 = os.path.join(self.datapath, "CV_step2_p1.png")
+            plt.savefig(to_file1)
+            plt.close()
+
+
+            search_key = str(example_scan_rate) + "mV"
+            # Find all names containing "10mVs"
+            matching_data = [name for name in data_list if search_key in name]
+            print(matching_data)
+            plt.figure()
+            if matching_data:
+                df = myglobals[matching_data[0]]
+                df = df[df['Scan'] == int(example_cycle)]
+                U = df['WE(1).Potential (V)']
+                I = df['WE(1).Current (A)']
+
+                # Separate top and bottom
+                upperU, lowerU, upperI, lowerI = separater(U, I, min(U), max(U))
+
+                if apply_gaussian_filter:
+                    smoothed_upperI = gaussian_filter(upperI, sigma=1)
+                    smoothed_lowerI = gaussian_filter(lowerI, sigma=1)
+                else:
+                    smoothed_upperI = upperI
+                    smoothed_lowerI = lowerI
+
+                plt.scatter(upperU, smoothed_upperI, s=1, c='#1f77b4')
+                plt.scatter(lowerU, smoothed_lowerI, s=1, c='#ff7f0e')
+
+                for z in range(len(peak_range_ox)):
+                    top_x, top_y = find_max(upperU, smoothed_upperI, peak_range_ox[z][0], peak_range_ox[z][1])
+                    bottom_x, bottom_y = find_min(lowerU, smoothed_lowerI, peak_range_re[z][0], peak_range_re[z][1])
+                    plt.scatter(top_x, top_y, s=20, c='r')
+                    plt.scatter(bottom_x, bottom_y, s=20, c='r')
+
+            plt.xlabel('Applied potential/V')
+            plt.ylabel('Current/A')
+            # plt.show()
+            to_file2 = os.path.join(self.datapath, "CV_step2_p2.png")
+            plt.savefig(to_file2)
+            plt.close()
+
+
+            # Save tmp results
+            tmp_res_filename = "form2_res.pkl"
+            tmp_res = {
+                'peak_range_ox': peak_range_ox,
+                'peak_info': peak_info,
+                'data_list': data_list,
+                'globals': myglobals,
+            }
+            self.pkl_save(tmp_res, tmp_res_filename)
+        except Exception as e:
+            status_msg = str(e)
+
+
+        data = self.res_data
+
+        if 'CV' not in data.keys():
+            data['CV'] = {}
+
+        if status_msg == '':
+            data['CV']['form2'] = {
+                'status': 'done',
+                'input': all_params,
+                'output': {
+                    # 'file1': to_file if to_file.startswith("/") else '/' + to_file,
+                    'img1': to_file1.split('/')[-1],
+                    'img2': to_file2.split('/')[-1],
+                }
+            }
+            self.save_result_data(data)
+
+            return {
+                'status': True,
+                'version': self.version,
+                'message': 'Success',
+                'data': data
+            }
+        else:
+            data['CV']['form2'] = {
+                'status': status_msg,
+                'input': all_params,
+            }
+            self.save_result_data(data)
+
+            return {
+                'status': False,
+                'version': self.version,
+                'message': status_msg,
+                'data': data
+            }
+
+
+    def start3(self, all_params):
+        status_msg = ''
+        try:
+            form2_res = self.pkl_load("form2_res.pkl")
+            peak_range_ox = form2_res['peak_range_ox']
+            peak_info = form2_res['peak_info']
+
+            # input calculate parameter
+            # n = 1  # number of electron transfer
+            # C = 2e-6  # initial concertration in mol/cm3
+            # T = 298.15  # temperature in K
+            n = int(all_params['n'])
+            C = float(all_params['c'])
+            T = float(all_params['t'])
+            electrode_dia = float(all_params['d'])
+            # print(all_params)
+
+            # Diameter in cm
+            # electrode_dia = 0.30  # electorde diameter in cm
+            A_Real = np.pi * (electrode_dia / 2) ** 2
+            print('Electrode Surface Area:', A_Real)
+
+
+            # constant number don't change
+            F = 96485.33212
+            R = 8.314462618
+
+            # Randles–Ševčík plot sprt scan_rate vs Ipeak
+            D_cal = []
+            D_ox = []
+            D_re = []
+            plt.figure()
+            for i in range(len(peak_range_ox)):
+                scan_rate_05 = ((np.array(peak_info[f'Scan_Rate{i}'])) / 1000) ** 0.5
+                scan_rate = np.array(peak_info[f'Scan_Rate{i}']) / 1000
+
+                La = LinearRegression().fit(np.array(scan_rate_05).reshape(-1, 1),
+                                            np.array(peak_info[f'Ia{i}']).reshape(-1, 1))
+                Ia = La.intercept_[0]
+                Sa = La.coef_[0][0]
+
+                Lc = LinearRegression().fit(np.array(scan_rate_05).reshape(-1, 1),
+                                            np.array(peak_info[f'Ic{i}']).reshape(-1, 1))
+                Ic = Lc.intercept_[0]
+                Sc = Lc.coef_[0][0]
+
+                #     Ia_sim = 0.4463 * (n * F * C * A_Real * ((n * F * scan_rate * D[i]) / (R * T)) ** 0.5) + Ia
+                #     Ic_sim = -0.4463 * (n * F * C * A_Real * ((n * F * scan_rate * D[i]) / (R * T)) ** 0.5) + Ic
+
+                sim_x = np.linspace(min(scan_rate_05), max(scan_rate_05), 100)
+                sim_ya = Sa * sim_x + Ia
+                sim_yc = Sc * sim_x + Ic
+
+                D_cala = (Sa / (0.446 * n * F * C * A_Real * ((n * F) / (R * T)) ** 0.5)) ** 2
+                D_calc = (Sc / (0.446 * n * F * C * A_Real * ((n * F) / (R * T)) ** 0.5)) ** 2
+
+                D_cal.append((D_cala, D_calc))
+                D_ox.append(D_cala)
+                D_re.append(D_calc)
+
+                darker_color = make_color_darker(colors[i], 0.5)
+                plt.scatter(scan_rate_05, peak_info[f'Ia{i}'], label=f'Exp-Ox{i + 1}', s=10, color=colors[i])
+                #     plt.scatter(scan_rate_05,Ia_sim,label=f'Sim-Ox{i+1}',s=10, marker='^', color = darker_color)
+
+                plt.plot(sim_x, sim_ya, color='red')
+                plt.xlabel('Scanning Rate ν^1/2')
+                plt.ylabel('Current Peak/A')
+                plt.legend()
+
+                plt.scatter(scan_rate_05, peak_info[f'Ic{i}'], label=f'Exp-Re{i + 1}', s=10, color=colors[i+1])
+                #     plt.scatter(scan_rate_05,Ic_sim,label=f'Sim-Re{i+1}',s=10, marker='^', color = darker_color)
+                plt.plot(sim_x, sim_yc, color='red')
+                plt.xlabel('Scanning Rate ν^1/2')
+                plt.ylabel('Current Peak/A')
+                plt.legend()
+
+            to_file1 = os.path.join(self.datapath, "CV_step3_p1.png")
+            plt.savefig(to_file1)
+            plt.close()
+        except  Exception as e:
+            status_msg = str(e)
+
+        data = self.res_data
+
+        if 'CV' not in data.keys():
+            data['CV'] = {}
+
+        if status_msg == '':
+            data['CV']['form3'] = {
+                'status': 'done',
+                'input': all_params,
+                'output': {
+                    'img1': to_file1.split('/')[-1],
+                }
+            }
+            self.save_result_data(data)
+
+            return {
+                'status': True,
+                'version': self.version,
+                'message': 'Success',
+                'data': data
+            }
+        else:
+            data['CV']['form3'] = {
+                'status': status_msg,
+                'input': all_params
+            }
+            self.save_result_data(data)
+
+            return {
+                'status': False,
+                'version': self.version,
+                'message': status_msg,
+                'data': data
+            }
+
+    def start4(self, all_params):
+        status_msg = ''
+        try:
+            form2_res = self.pkl_load("form2_res.pkl")
+            peak_info = form2_res['peak_info']
+
+            ## (Function 4)Rate constant module
+            # Input calculate parameter
+            # a = 0.5
+            # n = [1, 1, 1]
+            # D = [1.3942717733456817e-06, 3.8616343823150815e-05, 9.283534073717666e-05]
+            # T = 298.15  # 25 degrees Celsius in Kelvin
+            a = float(all_params['input_a'])
+            n = ast.literal_eval(all_params['input_n'])
+            D = ast.literal_eval(all_params['input_d'])
+            T = float(ast.literal_eval(all_params['input_t']))
+
+
+
+            # Constant numbers that don't change
+            F = 96485.33212
+            R = 8.314462618
+
+            k_list = []
+            res = []
+            for i in range(len(n)):
+                DelE = peak_info[f'DelE0{i}']
+                Scan_Rate = peak_info[f'Scan_Rate{i}']
+                Scan_Rate_V = np.array(Scan_Rate) / 1000
+                DelE_mV = np.array(DelE) * 1000
+                print(f"DelE_mV{i}: ", DelE_mV)
+
+                # Define the lambda function, passing the correct n value
+                print(f"a: {type(a)}, F: {type(F)}, R: {type(R)}, T: {type(T)}, n[i]: {type(n[0])}")
+
+                fai_lambda = lambda DelEi: 2.18 * ((a / math.pi) ** 0.5) * math.exp(-((a ** 2 * F) / (R * T)) * n[i] * DelEi)
+
+                # Apply the lambda function to the list of DelE values
+                fai = list(map(fai_lambda, DelE))
+
+                # Plotting the results
+                plt.figure()
+                plt.scatter(DelE_mV, fai, s=5)
+                plt.xlabel('$\Delta E_p$ (mV)')
+                plt.ylabel('$\Psi$')
+                # plt.show()
+                img_path1 = os.path.join(self.datapath, "CV_step3_func3_p1.png")
+                plt.savefig(img_path1)
+                plt.close()
+
+                # Calculate the term [πDnF/RT]^{-1/2}
+                term = ((math.pi * D[i] * n[i] * F) / (R * T)) ** (-1 / 2)
+                # Calculate x-axis values
+                x_value = term * (Scan_Rate_V ** (-1 / 2))
+                # Perform linear regression
+                slope, intercept = np.polyfit(x_value, fai, 1)
+
+                # Plot fai against the term multiplied by v^(-1/2)
+                plt.figure()
+                plt.scatter(x_value, fai, s=1)
+                # Add linear regression line to the plot
+                plt.plot(x_value, slope * np.array(x_value) + intercept, color='red')
+                # Display the equation of the linear regression line on the plot
+                equation = f"$y = {slope:.4f}x + {intercept:.4f}$"
+                plt.text(0.1, 0.9, equation, transform=plt.gca().transAxes)
+                plt.xlabel('$[πDnνF/RT]^{-1/2}$' + str(term) + '$v^{-1/2}$')
+                plt.ylabel('$\Psi$')
+                # Display the slope
+                print("Slope:", slope)
+                k_list.append(slope)
+                # plt.show()
+                img_path2 = os.path.join(self.datapath, "CV_step3_func3_p2.png")
+                plt.savefig(img_path2)
+                plt.close()
+
+                res.append({
+                    'img1': img_path1.split('/')[-1],
+                    'img2': img_path2.split('/')[-1],
+                    'slope': slope,
+                })
+        except Exception as e:
+            status_msg = str(e)
+
+        data = self.res_data
+
+        if 'CV' not in data.keys():
+            data['CV'] = {}
+
+        if status_msg == '':
+            data['CV']['form4'] = {
+                'status': 'done',
+                'input': all_params,
+                'output': {
+                    'files': res
+                }
+            }
+            self.save_result_data(data)
+
+            return {
+                'status': True,
+                'version': self.version,
+                'message': 'Success',
+                'data': data
+            }
+        else:
+            data['CV']['form4'] = {
+                'status': status_msg,
+                'input': all_params
+            }
+            self.save_result_data(data)
+
+            return {
+                'status': False,
+                'version': self.version,
+                'message': status_msg,
+                'data': data
+            }
+
+    def start5(self, all_params):
+        status_msg = ''
+        try:
+            form2_res = self.pkl_load("form2_res.pkl")
+            peak_info = form2_res['peak_info']
+            data_list = form2_res['data_list']
+            myglobals = form2_res['globals']
+
+
+            cycle = int(all_params['cycle'])
+            n = int(all_params['input_n'])
+            T = float(ast.literal_eval(all_params['input_t']))
+            electrode_dia = float(ast.literal_eval(all_params['electrode_dia']))
+            A_Real = np.pi * (electrode_dia/2)**2
+            Which_Current_Peak = int(all_params['current_peak'])
+            cycle_range = range(2, 15)
+
+            now = datetime.now()
+            formatted_time = now.strftime("%Y-%m-%d %H:%M:%S")
+            print("Start:", formatted_time)
+            # constant number don't change (not input value!!)
+            F = 96485.33212
+            R = 8.314462618
+
+            print("peak_info[Ea0]:", peak_info['Ea0'])
+
+            m1_files = []
+            for i, var_name in enumerate(data_list):
                 df = myglobals[var_name]
                 print(var_name)
                 scan_rate = Search_scan_rate(var_name)
                 name = str(scan_rate) + "mV"
 
-                # Initialize lists for this file
-                Ea_j = []
-                Ec_j = []
-                Ia_j = []
-                Ic_j = []
+                print(peak_info[f'Ea0'][len(cycle_range) * i + (cycle - cycle_range[0])])
+                cycle_df = df[df['Scan'] == cycle]
+                Ui = cycle_df['WE(1).Potential (V)']
+                Ii = cycle_df['WE(1).Current (A)']
+                Ui = np.array(Ui)
+                Ii = np.array(Ii)
+                Ji = Ii / A_Real
 
-                for i in cycle_range:
-                    cycle_df = df[df['Scan'] == i]
-                    if len(cycle_df) == 0:
-                        continue
-                    Ui = cycle_df['WE(1).Potential (V)']
-                    Ii = cycle_df['WE(1).Current (A)']
-                    Ui = np.array(Ui)
-                    Ii = np.array(Ii)
+                # Separate top and bottom
+                upperU, lowerU, upperJ, lowerJ = separater(Ui, Ji, min(Ui), max(Ui))
 
-                    # Separate top and bottom
-                    upperU, lowerU, upperI, lowerI = separater(Ui, Ii, min(Ui), max(Ui))
+                # Apply Gaussian filter (optional)
+                apply_gaussian_filter = False  # Set to True to apply the filter, False to not apply the filter
 
-                    # Apply Gaussian filter (optional)
-                    apply_gaussian_filter = False  # Set to True to apply the filter, False to not apply the filter
+                if apply_gaussian_filter:
+                    smoothed_upperJ = gaussian_filter(upperJ, sigma=1)
+                    smoothed_lowerJ = gaussian_filter(lowerJ, sigma=1)
+                else:
+                    smoothed_upperJ = upperJ
+                    smoothed_lowerJ = lowerJ
 
-                    if apply_gaussian_filter:
-                        smoothed_upperI = gaussian_filter(upperI, sigma=1)
-                        smoothed_lowerI = gaussian_filter(lowerI, sigma=1)
-                    else:
-                        smoothed_upperI = upperI
-                        smoothed_lowerI = lowerI
-
-                    # Input range of first peak
-                    top_x, top_y = find_max(upperU, smoothed_upperI, peak_range_ox[z][0], peak_range_ox[z][1])
-                    bottom_x, bottom_y = find_min(lowerU, smoothed_lowerI, peak_range_re[z][0], peak_range_re[z][1])
-                    DelE02i = top_x - bottom_x
-                    Ef2i = (top_x + bottom_x) / 2
-
-                    peak_info[f'Ea{z}'].append(top_x)
-                    Ea_j.append(top_x)
-                    peak_info[f'Ia{z}'].append(find_y(upperU, smoothed_upperI, top_x))
-                    Ia_j.append(find_y(upperU, smoothed_upperI, top_x))
-                    peak_info[f'Ec{z}'].append(bottom_x)
-                    Ec_j.append(bottom_x)
-                    peak_info[f'Ic{z}'].append(find_y(lowerU, smoothed_lowerI, bottom_x))
-                    Ic_j.append(find_y(lowerU, smoothed_lowerI, bottom_x))
-
-                    peak_info[f'DelE0{z}'].append(DelE02i)
-                    peak_info[f'Ef{z}'].append(Ef2i)
-
-                    peak_info[f'Scan_Rate{z}'].append(scan_rate)
+                logJ_upper = special_log(smoothed_upperJ)
+                dlogJ_dU = np.gradient(logJ_upper, upperU)
+                dU_dlogJ = np.gradient(upperU, logJ_upper)
+                Tafel_slope = 1 / dlogJ_dU
+                # Calculate the transfer coefficient (alpha)
+                alpha = (2.303 * R * T) / (Tafel_slope * n * F)
 
 
+                # Create a figure with dual y-axes
+                fig, ax1 = plt.subplots()
+                ax1.set_xlabel('Applied Potential [V]')
+                ax1.set_ylabel('Current density [A/cm^2]', color=colors[0])
+                ax1.scatter(upperU, smoothed_upperJ, s=1, color=colors[0])
+                ax1.tick_params(axis='y', labelcolor=colors[0])
 
-        # ==============================
-        now = datetime.now()
-        formatted_time = now.strftime("%Y-%m-%d %H:%M:%S")
-        print("Done:", formatted_time)
+                ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+                ax2.set_ylabel('\u0391', color=colors[1])  # we already handled the x-label with ax1
+                ax2.scatter(upperU, alpha, s=1, color=colors[1])
+                ax2.set_ylim([-1, 1])  # Limit y-axis for transfer coefficient between -1 and 1
+                ax2.tick_params(axis='y', labelcolor=colors[1])
 
-        def show_info(peak_info, n=5):
-            for key, values in peak_info.items():
-                # Check if the list is shorter than n, if so, adjust n to the length of the list
-                display_length = min(len(values), n)
-                print(f'{key}: {[len(values)]} {values[:display_length]}')
+                fig.tight_layout()  # otherwise the right y-label is slightly clipped
+                plt.title(f'Tafel Plot and \u0391 for {name} (Cycle {cycle})')
+                plt.grid(True)
+                # plt.show()
+                img_path2 = os.path.join(self.datapath, "CV_step3_func5_m1_p{}.png".format(i))
+                plt.savefig(img_path2)
+                plt.close()
+                m1_files.append(img_path2.split("/")[-1])
 
-        # Call the function to print the head of peak_info
-        show_info(peak_info)
+            # -------------------------------------
+            # Method 2
+            # -------------------------------------
 
+            now = datetime.now()
+            formatted_time = now.strftime("%Y-%m-%d %H:%M:%S")
+            print("Start:", formatted_time)
 
-        # Dictionary to store the mean values of Ef
-        mean_Ef = {}
+            m2_files = []
+            for i, var_name in enumerate(data_list):
+                df = myglobals[var_name]
+                print(var_name)
+                scan_rate = Search_scan_rate(var_name)
+                name = str(scan_rate) + "mV"
 
-        for i in range(len(peak_range_ox)):
-            Ef = np.mean(peak_info[f'Ef{i}'])
-            mean_Ef[f'Ef{i + 1}'] = Ef
+                #         print(peak_info[f'Ea0'][len(cycle_range)*i+(cycle-cycle_range[0])])
+                cycle_df = df[df['Scan'] == cycle]
+                Ui = cycle_df['WE(1).Potential (V)']
+                Ii = cycle_df['WE(1).Current (A)']
+                Ui = np.array(Ui)
+                Ii = np.array(Ii)
+                Ji = Ii / A_Real
+                Ji = Ii
+                # Separate top and bottom
+                upperU, lowerU, upperI, lowerI = separater(Ui, Ii, min(Ui), max(Ui))
 
-        # Print the results
-        for key, value in mean_Ef.items():
-            print(f"{key}: {value}")
+                # Apply Gaussian filter (optional)
+                apply_gaussian_filter = False  # Set to True to apply the filter, False to not apply the filter
 
+                if apply_gaussian_filter:
+                    smoothed_upperI = gaussian_filter(upperI, sigma=1)
+                    smoothed_lowerI = gaussian_filter(lowerI, sigma=1)
+                else:
+                    smoothed_upperI = upperI
+                    smoothed_lowerI = lowerI
 
-        ## show all searched peaks on the CV plot figure
-        plt.figure()
-        # Plot the CV data
-        for data_i in data_list:
-            df = myglobals[data_i]  # Access the DataFrame using the variable name
-            print(data_i)
-            U = df['WE(1).Potential (V)']
-            I = df['WE(1).Current (A)']
-            scan_rate = Search_scan_rate(data_i)  # Extract scan rate from the variable name
-            plt.scatter(U, I, label=f'{scan_rate} mV', s=1, c='#1f77b4')
+                smoothed_upperI = np.array(smoothed_upperI)
+                smoothed_lowerI = np.array(smoothed_upperI)
 
-        # Plot the peak information
-        for i in range(len(peak_range_ox)):
-            plt_data_Ea = peak_info[f'Ea{i}']
-            plt_data_Ec = peak_info[f'Ec{i}']
-            plt_data_Ia = peak_info[f'Ia{i}']
-            plt_data_Ic = peak_info[f'Ic{i}']
-            plt.scatter(plt_data_Ea, plt_data_Ia, s=10, c='r')
-            plt.scatter(plt_data_Ec, plt_data_Ic, s=10, c='r')
+                upperU = np.array(upperU)
+                lowerU = np.array(lowerU)
 
-        plt.xlabel('Applied potential/V')
-        plt.ylabel('Current/A')
-        plt.legend()
-        # plt.show()
-        to_file1 = os.path.join(self.datapath, "CV_step2_p1.png")
-        plt.savefig(to_file1)
-        plt.close()
+                I_Peak = peak_info[f'Ia{Which_Current_Peak - 1}'][i * len(cycle_range) + (cycle - min(cycle_range))]
+                I_term = (I_Peak ** 2) / (I_Peak - smoothed_upperI)
+                lnI_term = special_ln(I_term)
+                upperO = (F / (R * T)) * upperU
 
+                dlnI_term_dU = np.gradient(lnI_term, upperU)
+                alpha = (1 / 2) * ((R * T) / F) * dlnI_term_dU
 
-        search_key = str(example_scan_rate) + "mV"
-        # Find all names containing "10mVs"
-        matching_data = [name for name in data_list if search_key in name]
-        print(matching_data)
-        plt.figure()
-        if matching_data:
-            df = myglobals[matching_data[0]]
-            df = df[df['Scan'] == int(example_cycle)]
-            U = df['WE(1).Potential (V)']
-            I = df['WE(1).Current (A)']
+                #         dlnI_term_dO = np.gradient(lnI_term, upperO)
+                #         alpha = (1/2)*dlnI_term_dO
 
-            # Separate top and bottom
-            upperU, lowerU, upperI, lowerI = separater(U, I, min(U), max(U))
+                # Create a figure with dual y-axes
+                fig, ax1 = plt.subplots()
+                ax1.set_xlabel('Applied Potential [V]')
+                ax1.set_ylabel('Current density [A/cm^2]', color=colors[0])
+                ax1.scatter(upperU, smoothed_upperI, s=1, color=colors[0])
+                ax1.tick_params(axis='y', labelcolor=colors[0])
 
-            if apply_gaussian_filter:
-                smoothed_upperI = gaussian_filter(upperI, sigma=1)
-                smoothed_lowerI = gaussian_filter(lowerI, sigma=1)
-            else:
-                smoothed_upperI = upperI
-                smoothed_lowerI = lowerI
+                ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+                ax2.set_ylabel('Transfer coefficient \u03B1', color=colors[1])  # we already handled the x-label with ax1
+                ax2.scatter(upperU, alpha, s=1, color=colors[1])
+                ax2.set_ylim([-1, 1])  # Limit y-axis for transfer coefficient between -1 and 1
+                ax2.tick_params(axis='y', labelcolor=colors[1])
 
-            plt.scatter(upperU, smoothed_upperI, s=1, c='#1f77b4')
-            plt.scatter(lowerU, smoothed_lowerI, s=1, c='#ff7f0e')
-
-            for z in range(len(peak_range_ox)):
-                top_x, top_y = find_max(upperU, smoothed_upperI, peak_range_ox[z][0], peak_range_ox[z][1])
-                bottom_x, bottom_y = find_min(lowerU, smoothed_lowerI, peak_range_re[z][0], peak_range_re[z][1])
-                plt.scatter(top_x, top_y, s=20, c='r')
-                plt.scatter(bottom_x, bottom_y, s=20, c='r')
-
-        plt.xlabel('Applied potential/V')
-        plt.ylabel('Current/A')
-        # plt.show()
-        to_file2 = os.path.join(self.datapath, "CV_step2_p2.png")
-        plt.savefig(to_file2)
-        plt.close()
-
-
-        # Save tmp results
-        tmp_res_filename = "form2_res.pkl"
-        tmp_res = {
-            'peak_range_ox': peak_range_ox,
-            'peak_info': peak_info,
-            'data_list': data_list,
-            'globals': myglobals,
-        }
-        self.pkl_save(tmp_res, tmp_res_filename)
-
+                fig.tight_layout()  # otherwise the right y-label is slightly clipped
+                plt.title(f'Tafel Plot and Derivative for {name} (Cycle {cycle})')
+                plt.grid(True)
+                # plt.show()
+                img_path2 = os.path.join(self.datapath, "CV_step3_func5_m2_p{}.png".format(i))
+                plt.savefig(img_path2)
+                plt.close()
+                m2_files.append(img_path2.split("/")[-1])
+        except Exception as e:
+            status_msg = str(e)
 
         data = self.res_data
 
         if 'CV' not in data.keys():
             data['CV'] = {}
 
-        data['CV']['form2'] = {
-            'status': 'done',
-            'input': all_params,
-            'output': {
-                # 'file1': to_file if to_file.startswith("/") else '/' + to_file,
-                'img1': to_file1.split('/')[-1],
-                'img2': to_file2.split('/')[-1],
+        if status_msg == '':
+            data['CV']['form5'] = {
+                'status': 'done',
+                'input': all_params,
+                'output': {
+                    'm1_files': m1_files,
+                    'm2_files': m2_files,
+                }
             }
-        }
-        self.save_result_data(data)
+            self.save_result_data(data)
 
-        return {
-            'status': True,
-            'version': self.version,
-            'message': 'Success',
-            'data': data
-        }
-
-    def start3(self, all_params):
-        form2_res = self.pkl_load("form2_res.pkl")
-        peak_range_ox = form2_res['peak_range_ox']
-        peak_info = form2_res['peak_info']
-
-        # input calculate parameter
-        # n = 1  # number of electron transfer
-        # C = 2e-6  # initial concertration in mol/cm3
-        # T = 298.15  # temperature in K
-        n = int(all_params['n'])
-        C = float(all_params['c'])
-        T = float(all_params['t'])
-        electrode_dia = float(all_params['d'])
-        # print(all_params)
-
-        # Diameter in cm
-        # electrode_dia = 0.30  # electorde diameter in cm
-        A_Real = np.pi * (electrode_dia / 2) ** 2
-        print('Electrode Surface Area:', A_Real)
-
-
-        # constant number don't change
-        F = 96485.33212
-        R = 8.314462618
-
-        # Randles–Ševčík plot sprt scan_rate vs Ipeak
-        D_cal = []
-        D_ox = []
-        D_re = []
-        plt.figure()
-        for i in range(len(peak_range_ox)):
-            scan_rate_05 = ((np.array(peak_info[f'Scan_Rate{i}'])) / 1000) ** 0.5
-            scan_rate = np.array(peak_info[f'Scan_Rate{i}']) / 1000
-
-            La = LinearRegression().fit(np.array(scan_rate_05).reshape(-1, 1),
-                                        np.array(peak_info[f'Ia{i}']).reshape(-1, 1))
-            Ia = La.intercept_[0]
-            Sa = La.coef_[0][0]
-
-            Lc = LinearRegression().fit(np.array(scan_rate_05).reshape(-1, 1),
-                                        np.array(peak_info[f'Ic{i}']).reshape(-1, 1))
-            Ic = Lc.intercept_[0]
-            Sc = Lc.coef_[0][0]
-
-            #     Ia_sim = 0.4463 * (n * F * C * A_Real * ((n * F * scan_rate * D[i]) / (R * T)) ** 0.5) + Ia
-            #     Ic_sim = -0.4463 * (n * F * C * A_Real * ((n * F * scan_rate * D[i]) / (R * T)) ** 0.5) + Ic
-
-            sim_x = np.linspace(min(scan_rate_05), max(scan_rate_05), 100)
-            sim_ya = Sa * sim_x + Ia
-            sim_yc = Sc * sim_x + Ic
-
-            D_cala = (Sa / (0.446 * n * F * C * A_Real * ((n * F) / (R * T)) ** 0.5)) ** 2
-            D_calc = (Sc / (0.446 * n * F * C * A_Real * ((n * F) / (R * T)) ** 0.5)) ** 2
-
-            D_cal.append((D_cala, D_calc))
-            D_ox.append(D_cala)
-            D_re.append(D_calc)
-
-            darker_color = make_color_darker(colors[i], 0.5)
-            plt.scatter(scan_rate_05, peak_info[f'Ia{i}'], label=f'Exp-Ox{i + 1}', s=10, color=colors[i])
-            #     plt.scatter(scan_rate_05,Ia_sim,label=f'Sim-Ox{i+1}',s=10, marker='^', color = darker_color)
-
-            plt.plot(sim_x, sim_ya, color='red')
-            plt.xlabel('Scanning Rate ν^1/2')
-            plt.ylabel('Current Peak/A')
-            plt.legend()
-
-            plt.scatter(scan_rate_05, peak_info[f'Ic{i}'], label=f'Exp-Re{i + 1}', s=10, color=colors[i+1])
-            #     plt.scatter(scan_rate_05,Ic_sim,label=f'Sim-Re{i+1}',s=10, marker='^', color = darker_color)
-            plt.plot(sim_x, sim_yc, color='red')
-            plt.xlabel('Scanning Rate ν^1/2')
-            plt.ylabel('Current Peak/A')
-            plt.legend()
-
-        to_file1 = os.path.join(self.datapath, "CV_step3_p1.png")
-        plt.savefig(to_file1)
-        plt.close()
-
-        data = self.res_data
-
-        if 'CV' not in data.keys():
-            data['CV'] = {}
-
-        data['CV']['form3'] = {
-            'status': 'done',
-            'input': all_params,
-            'output': {
-                'img1': to_file1.split('/')[-1],
+            return {
+                'status': True,
+                'version': self.version,
+                'message': 'Success',
+                'data': data
             }
-        }
-        self.save_result_data(data)
-
-        return {
-            'status': True,
-            'version': self.version,
-            'message': 'Success',
-            'data': data
-        }
-
-    def start4(self, all_params):
-        form2_res = self.pkl_load("form2_res.pkl")
-        peak_info = form2_res['peak_info']
-
-        ## (Function 4)Rate constant module
-        # Input calculate parameter
-        # a = 0.5
-        # n = [1, 1, 1]
-        # D = [1.3942717733456817e-06, 3.8616343823150815e-05, 9.283534073717666e-05]
-        # T = 298.15  # 25 degrees Celsius in Kelvin
-        a = float(all_params['input_a'])
-        n = ast.literal_eval(all_params['input_n'])
-        D = ast.literal_eval(all_params['input_d'])
-        T = float(ast.literal_eval(all_params['input_t']))
-
-
-
-        # Constant numbers that don't change
-        F = 96485.33212
-        R = 8.314462618
-
-        k_list = []
-        res = []
-        for i in range(len(n)):
-            DelE = peak_info[f'DelE0{i}']
-            Scan_Rate = peak_info[f'Scan_Rate{i}']
-            Scan_Rate_V = np.array(Scan_Rate) / 1000
-            DelE_mV = np.array(DelE) * 1000
-            print(f"DelE_mV{i}: ", DelE_mV)
-
-            # Define the lambda function, passing the correct n value
-            print(f"a: {type(a)}, F: {type(F)}, R: {type(R)}, T: {type(T)}, n[i]: {type(n[0])}")
-
-            fai_lambda = lambda DelEi: 2.18 * ((a / math.pi) ** 0.5) * math.exp(-((a ** 2 * F) / (R * T)) * n[i] * DelEi)
-
-            # Apply the lambda function to the list of DelE values
-            fai = list(map(fai_lambda, DelE))
-
-            # Plotting the results
-            plt.figure()
-            plt.scatter(DelE_mV, fai, s=5)
-            plt.xlabel('$\Delta E_p$ (mV)')
-            plt.ylabel('$\Psi$')
-            # plt.show()
-            img_path1 = os.path.join(self.datapath, "CV_step3_func3_p1.png")
-            plt.savefig(img_path1)
-            plt.close()
-
-            # Calculate the term [πDnF/RT]^{-1/2}
-            term = ((math.pi * D[i] * n[i] * F) / (R * T)) ** (-1 / 2)
-            # Calculate x-axis values
-            x_value = term * (Scan_Rate_V ** (-1 / 2))
-            # Perform linear regression
-            slope, intercept = np.polyfit(x_value, fai, 1)
-
-            # Plot fai against the term multiplied by v^(-1/2)
-            plt.figure()
-            plt.scatter(x_value, fai, s=1)
-            # Add linear regression line to the plot
-            plt.plot(x_value, slope * np.array(x_value) + intercept, color='red')
-            # Display the equation of the linear regression line on the plot
-            equation = f"$y = {slope:.4f}x + {intercept:.4f}$"
-            plt.text(0.1, 0.9, equation, transform=plt.gca().transAxes)
-            plt.xlabel('$[πDnνF/RT]^{-1/2}$' + str(term) + '$v^{-1/2}$')
-            plt.ylabel('$\Psi$')
-            # Display the slope
-            print("Slope:", slope)
-            k_list.append(slope)
-            # plt.show()
-            img_path2 = os.path.join(self.datapath, "CV_step3_func3_p2.png")
-            plt.savefig(img_path2)
-            plt.close()
-
-            res.append({
-                'img1': img_path1.split('/')[-1],
-                'img2': img_path2.split('/')[-1],
-                'slope': slope,
-            })
-
-        data = self.res_data
-
-        if 'CV' not in data.keys():
-            data['CV'] = {}
-
-        data['CV']['form4'] = {
-            'status': 'done',
-            'input': all_params,
-            'output': {
-                'files': res
+        else:
+            data['CV']['form5'] = {
+                'status': status_msg,
+                'input': all_params
             }
-        }
-        self.save_result_data(data)
+            self.save_result_data(data)
 
-        return {
-            'status': True,
-            'version': self.version,
-            'message': 'Success',
-            'data': data
-        }
-
-    def start5(self, all_params):
-        form2_res = self.pkl_load("form2_res.pkl")
-        peak_info = form2_res['peak_info']
-        data_list = form2_res['data_list']
-        myglobals = form2_res['globals']
-
-
-        cycle = int(all_params['cycle'])
-        n = int(all_params['input_n'])
-        T = float(ast.literal_eval(all_params['input_t']))
-        electrode_dia = float(ast.literal_eval(all_params['electrode_dia']))
-        A_Real = np.pi * (electrode_dia/2)**2
-        Which_Current_Peak = int(all_params['current_peak'])
-        cycle_range = range(2, 15)
-
-        now = datetime.now()
-        formatted_time = now.strftime("%Y-%m-%d %H:%M:%S")
-        print("Start:", formatted_time)
-        # constant number don't change (not input value!!)
-        F = 96485.33212
-        R = 8.314462618
-
-        print("peak_info[Ea0]:", peak_info['Ea0'])
-
-        m1_files = []
-        for i, var_name in enumerate(data_list):
-            df = myglobals[var_name]
-            print(var_name)
-            scan_rate = Search_scan_rate(var_name)
-            name = str(scan_rate) + "mV"
-
-            print(peak_info[f'Ea0'][len(cycle_range) * i + (cycle - cycle_range[0])])
-            cycle_df = df[df['Scan'] == cycle]
-            Ui = cycle_df['WE(1).Potential (V)']
-            Ii = cycle_df['WE(1).Current (A)']
-            Ui = np.array(Ui)
-            Ii = np.array(Ii)
-            Ji = Ii / A_Real
-
-            # Separate top and bottom
-            upperU, lowerU, upperJ, lowerJ = separater(Ui, Ji, min(Ui), max(Ui))
-
-            # Apply Gaussian filter (optional)
-            apply_gaussian_filter = False  # Set to True to apply the filter, False to not apply the filter
-
-            if apply_gaussian_filter:
-                smoothed_upperJ = gaussian_filter(upperJ, sigma=1)
-                smoothed_lowerJ = gaussian_filter(lowerJ, sigma=1)
-            else:
-                smoothed_upperJ = upperJ
-                smoothed_lowerJ = lowerJ
-
-            logJ_upper = special_log(smoothed_upperJ)
-            dlogJ_dU = np.gradient(logJ_upper, upperU)
-            dU_dlogJ = np.gradient(upperU, logJ_upper)
-            Tafel_slope = 1 / dlogJ_dU
-            # Calculate the transfer coefficient (alpha)
-            alpha = (2.303 * R * T) / (Tafel_slope * n * F)
-
-
-            # Create a figure with dual y-axes
-            fig, ax1 = plt.subplots()
-            ax1.set_xlabel('Applied Potential [V]')
-            ax1.set_ylabel('Current density [A/cm^2]', color=colors[0])
-            ax1.scatter(upperU, smoothed_upperJ, s=1, color=colors[0])
-            ax1.tick_params(axis='y', labelcolor=colors[0])
-
-            ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-            ax2.set_ylabel('\u0391', color=colors[1])  # we already handled the x-label with ax1
-            ax2.scatter(upperU, alpha, s=1, color=colors[1])
-            ax2.set_ylim([-1, 1])  # Limit y-axis for transfer coefficient between -1 and 1
-            ax2.tick_params(axis='y', labelcolor=colors[1])
-
-            fig.tight_layout()  # otherwise the right y-label is slightly clipped
-            plt.title(f'Tafel Plot and \u0391 for {name} (Cycle {cycle})')
-            plt.grid(True)
-            # plt.show()
-            img_path2 = os.path.join(self.datapath, "CV_step3_func5_m1_p{}.png".format(i))
-            plt.savefig(img_path2)
-            plt.close()
-            m1_files.append(img_path2.split("/")[-1])
-
-        # -------------------------------------
-        # Method 2
-        # -------------------------------------
-
-        now = datetime.now()
-        formatted_time = now.strftime("%Y-%m-%d %H:%M:%S")
-        print("Start:", formatted_time)
-
-        m2_files = []
-        for i, var_name in enumerate(data_list):
-            df = myglobals[var_name]
-            print(var_name)
-            scan_rate = Search_scan_rate(var_name)
-            name = str(scan_rate) + "mV"
-
-            #         print(peak_info[f'Ea0'][len(cycle_range)*i+(cycle-cycle_range[0])])
-            cycle_df = df[df['Scan'] == cycle]
-            Ui = cycle_df['WE(1).Potential (V)']
-            Ii = cycle_df['WE(1).Current (A)']
-            Ui = np.array(Ui)
-            Ii = np.array(Ii)
-            Ji = Ii / A_Real
-            Ji = Ii
-            # Separate top and bottom
-            upperU, lowerU, upperI, lowerI = separater(Ui, Ii, min(Ui), max(Ui))
-
-            # Apply Gaussian filter (optional)
-            apply_gaussian_filter = False  # Set to True to apply the filter, False to not apply the filter
-
-            if apply_gaussian_filter:
-                smoothed_upperI = gaussian_filter(upperI, sigma=1)
-                smoothed_lowerI = gaussian_filter(lowerI, sigma=1)
-            else:
-                smoothed_upperI = upperI
-                smoothed_lowerI = lowerI
-
-            smoothed_upperI = np.array(smoothed_upperI)
-            smoothed_lowerI = np.array(smoothed_upperI)
-
-            upperU = np.array(upperU)
-            lowerU = np.array(lowerU)
-
-            I_Peak = peak_info[f'Ia{Which_Current_Peak - 1}'][i * len(cycle_range) + (cycle - min(cycle_range))]
-            I_term = (I_Peak ** 2) / (I_Peak - smoothed_upperI)
-            lnI_term = special_ln(I_term)
-            upperO = (F / (R * T)) * upperU
-
-            dlnI_term_dU = np.gradient(lnI_term, upperU)
-            alpha = (1 / 2) * ((R * T) / F) * dlnI_term_dU
-
-            #         dlnI_term_dO = np.gradient(lnI_term, upperO)
-            #         alpha = (1/2)*dlnI_term_dO
-
-            # Create a figure with dual y-axes
-            fig, ax1 = plt.subplots()
-            ax1.set_xlabel('Applied Potential [V]')
-            ax1.set_ylabel('Current density [A/cm^2]', color=colors[0])
-            ax1.scatter(upperU, smoothed_upperI, s=1, color=colors[0])
-            ax1.tick_params(axis='y', labelcolor=colors[0])
-
-            ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-            ax2.set_ylabel('Transfer coefficient \u03B1', color=colors[1])  # we already handled the x-label with ax1
-            ax2.scatter(upperU, alpha, s=1, color=colors[1])
-            ax2.set_ylim([-1, 1])  # Limit y-axis for transfer coefficient between -1 and 1
-            ax2.tick_params(axis='y', labelcolor=colors[1])
-
-            fig.tight_layout()  # otherwise the right y-label is slightly clipped
-            plt.title(f'Tafel Plot and Derivative for {name} (Cycle {cycle})')
-            plt.grid(True)
-            # plt.show()
-            img_path2 = os.path.join(self.datapath, "CV_step3_func5_m2_p{}.png".format(i))
-            plt.savefig(img_path2)
-            plt.close()
-            m2_files.append(img_path2.split("/")[-1])
-
-        data = self.res_data
-
-        if 'CV' not in data.keys():
-            data['CV'] = {}
-
-        data['CV']['form5'] = {
-            'status': 'done',
-            'input': all_params,
-            'output': {
-                'm1_files': m1_files,
-                'm2_files': m2_files,
+            return {
+                'status': False,
+                'version': self.version,
+                'message': status_msg,
+                'data': data
             }
-        }
-        self.save_result_data(data)
-
-        return {
-            'status': True,
-            'version': self.version,
-            'message': 'Success',
-            'data': data
-        }
 
 
 
