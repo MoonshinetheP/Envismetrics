@@ -211,7 +211,7 @@ $$
 \Psi = \frac{0.6288 + 0.0021 \cdot X}{1 - 0.017 \cdot X}, \quad X = \Delta E_p \cdot n \quad (\text{in mV})
 $$
 
-For systems with large $\ Delta E_p$ or highly irreversible behavior, Envismetrics also supports the Klingler–Kochi formulation:
+For systems with large ($\Delta E_p$) or highly irreversible behavior, Envismetrics also supports the Klingler–Kochi formulation:
 
 $$
 \Psi = \frac{2.18}{\alpha \pi} \exp \left( - \frac{\alpha n \Delta E_p F}{2RT} \right)
