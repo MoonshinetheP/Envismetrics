@@ -59,7 +59,7 @@ While these methods are widely accepted, manual analysis can be labor-intensive 
 
 # Statement of Need
 
-Electrochemical researchers commonly analyze data using a combination of proprietary instrument software (e.g., NOVA for Autolab), manual spreadsheet tools (e.g., Excel), and general-purpose plotting software (e.g., Origin, SigmaPlot). While proprietary software facilitates data collection and basic visualization, it is often platform-specific, instrument-dependent, and limited in automation and cross-experiment reproducibility. Tools like Origin provide flexible plotting, but require manual preprocessing, repeated formatting, and domain expertise for kinetic modeling.
+Electrochemical researchers commonly analyze data using a combination of proprietary instrument software (e.g., NOVA for Autolab), manual spreadsheet tools (e.g., Excel), and general-purpose plotting software (e.g., Origin, SigmaPlot). While proprietary software facilitates data collection and basic visualization, it is often platform-specific, instrument-dependent, and limited in automation and cross-experiment reproducibility. Tools like Origin provide flexible plotting, but require manual preprocessing, repeated formatting, and domain expertise for kinetic modeling [@Garg2021].
 
 Envismetrics fills this gap by offering a powerful modular, web-based platform focused on automated analysis of electrochemical data, particularly from cyclic voltammetry (CV), linear sweep voltammetry at rotating disk electrodes (LSV at RDE), and chronoamperometry (CA). By supporting common data formats like .xlsx, .csv, and .txt, Envismetrics works independently of instrument brands—allowing researchers to export plaintext data from proprietary systems and continue their analysis seamlessly.
 
@@ -206,7 +206,7 @@ $$
 
 ### Function 4: Standard Rate Constant Calculation
 
-The standard rate constant, $k_0$, is calculated using a dimensionless kinetic parameter, $\Psi$, which relates $k_0$ to the system’s electrochemical and physical properties. This method is based on the classical Nicholson model [@nicholson1965theory] and was extended by Lavagnini et al. [@lavagnini2004extended] to cover a broader range of peak separations ($\Delta E_p$).
+The standard rate constant, $k_0$, is calculated using a dimensionless kinetic parameter, $\Psi$, which relates $k_0$ to the system’s electrochemical and physical properties. This method is based on the classical Nicholson model and was extended by Lavagnini et al. to cover a broader range of peak separations ($\Delta E_p$) [@nicholson1965theory；@lavagnini2004extended].
 
 Envismetrics automatically estimates $\Psi$ from the peak-to-peak separation and applies the empirical Lavagnini relationship:
 
@@ -245,7 +245,7 @@ $$
 \alpha_c = -\frac{RT}{F} \left( \frac{d \ln |j_{c, \text{corr}}|}{dE} \right)
 $$
 
-Additionally, the mass-transport corrected version proposed by Danlei Li et al. [@LI2018117] is implemented in this module. This method has also been applied in other research, including the study of dopamine oxidation at gold electrodes conducted by Bacil and co-workers [@zanello2019inorganic]. The transfer coefficient is calculated by: 
+Additionally, a mass-transport corrected version has been proposed and implemented in this module [@LI2018117]. This method has also been applied in other research, including the study of dopamine oxidation at gold electrodes conducted by Bacil and co-workers [@C9CP05527D]. The transfer coefficient is calculated by: 
 
 Function 2: Peak Searching
 
@@ -313,7 +313,7 @@ In *Envismetrics*, users can input experimental parameters such as the fitting i
 
 ## Applications in Research
 
-Envismetrics has been employed in various research projects, demonstrating its versatility in the analysis of electrochemical systems. For instance, the software was utilized in the investigation of photocatalytic degradation of perfluorooctanoic acid (PFOA), published in *Chemosphere* [@OSONGA2024143057], where it facilitated the precise analysis of kinetic parameters essential to understanding the degradation mechanisms. Additionally, Envismetrics played a key role in mechanistic studies on the electrochemical oxidation of dimethylamine borane (DMAB), as documented in recent works [@sadik2024dimethylamine,@Xue_2023,@TORABFAM2025107950]. In these studies, Envismetrics enabled the accurate processing of electrochemical data, which was crucial for validating the proposed mechanisms and deriving key kinetic parameters.
+Envismetrics has been employed in various research projects, demonstrating its versatility in the analysis of electrochemical systems. For instance, the software was utilized in the investigation of photocatalytic degradation of perfluorooctanoic acid (PFOA), published in *Chemosphere* [@OSONGA2024143057], where it facilitated the precise analysis of kinetic parameters essential to understanding the degradation mechanisms. Additionally, Envismetrics played a key role in mechanistic studies on the electrochemical oxidation of dimethylamine borane (DMAB), as documented in recent works [@Xue_2023,@TORABFAM2025107950]. In these studies, Envismetrics enabled the accurate processing of electrochemical data, which was crucial for validating the proposed mechanisms and deriving key kinetic parameters.
 
 ## Author Contributions (CRediT Taxonomy)
 
