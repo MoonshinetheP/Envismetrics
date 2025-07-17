@@ -136,8 +136,7 @@ def cv2(version=None):
         try:
             data = json.loads(open(data_file).read())
             data = data[module]
-            print('---')
-            print(data)
+            print("data:", json.dumps(data))
             # 检查状态
             kk = 'form{}'.format(step - 1)  # Step k 要用到 Form k-1 的结果。
             status = data[kk]['status']
@@ -149,7 +148,6 @@ def cv2(version=None):
         traceback.print_exc()
         data = {}
         status = 'processing'
-
     data['status'] = status
     data['processing_display'] = 'none' if status == 'done' else 'block'
     data['version'] = version

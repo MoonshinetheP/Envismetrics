@@ -500,7 +500,7 @@ class CV(BaseModule):
         data = self.read_data()
         if data is None:
             status_msg = 'error: one or more files are not allowed.'
-
+        mVs_list_str = ', '.join( ["'{}mVs'".format(k) for k in data] )
         if status_msg == '':
             status_msg = self.check_columns(data)
 
@@ -527,6 +527,7 @@ class CV(BaseModule):
                 'status': 'done',
                 'input': all_params,
                 'output': {
+                    'mVs_list_str': mVs_list_str,
                     'file1': to_file1.split("/")[-1],
                     'file2': to_file2.split("/")[-1],
                     'file3': to_file3.split("/")[-1],
@@ -794,7 +795,7 @@ class CV(BaseModule):
                 plt.figure()
 
                 # Determine the slice based on the variable
-                selected_data_list = data_list[discard_scan_start[z]:len(data_list) - discard_scan_end[z]]
+                selected_data_list = data_list[discard_scan_start[z]:discard_scan_end[z]]
                 print("\033[1mGoing to process the following files:\033[0m")
                 for file in selected_data_list:
                     print(file)
