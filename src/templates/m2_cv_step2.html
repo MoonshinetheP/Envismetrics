@@ -87,43 +87,27 @@
                 <h5>Function 2: Peak searching.</h5>
                 <div class="row col-6">
                     <div class="col-12">
-                        <label for="peak_range_top" class="form-label">Peak range (top): <a href="/doc#section12" target="_blank"><i class="bi bi-question-circle"></i></a></label>
-                        <input type="text" class="form-control" id="peak_range_top" name="peak_range_top" placeholder="0"
-                               required="" value="[(-1, -0.70),(0, 0.2),(0.25, 0.5)]">
-                        <div class="invalid-feedback">
-                            This field is required.
-                        </div>
+                        <label for="peak_count" class="form-label">Number of peaks:</label>
+                        <input type="number" class="form-control" id="peak_count" value="3" min="1" max="10">
                     </div>
+
+                    <div id="slider_container" class="col-12 mt-3"></div>
+
+                    <!-- Hidden input fields to hold final values -->
+                    <input type="hidden" id="peak_range_top" name="peak_range_top">
+                    <input type="hidden" id="peak_range_bottom" name="peak_range_bottom">
+                    <input type="hidden" id="scan_rate_from" name="scan_rate_from">
+                    <input type="hidden" id="scan_rate_after" name="scan_rate_after">
+                    <input type="hidden" id="cycle_range" name="cycle_range">
+
                     <div class="col-12">
-                        <label for="peak_range_bottom" class="form-label">Peak range (bottom): <a href="/doc#section12" target="_blank"><i class="bi bi-question-circle"></i></a></label>
-                        <input type="text" class="form-control" id="peak_range_bottom" name="peak_range_bottom" placeholder="0"
-                               required="" value="[(-0.925,-0.75),(0.0, 0.125),(0.125, 0.25)]">
-                        <div class="invalid-feedback">
-                            This field is required.
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <label for="scan_rate_from" class="form-label">Discard scan rate from: <a href="/doc#section_discard" target="_blank"><i class="bi bi-question-circle"></i></a></label>
-                        <input type="text" class="form-control" id="scan_rate_from"
-                               required="" value="[0, 0, 0]">
-                        <div class="invalid-feedback">
-                            This field is required.
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <label for="scan_rate_after" class="form-label">Discard scan rate after: <a href="/doc#section_discard" target="_blank"><i class="bi bi-question-circle"></i></a></label>
-                        <input type="text" class="form-control" id="scan_rate_after"
-                               required="" value="[0, 0, 2]">
-                        <div class="invalid-feedback">
-                            This field is required.
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <label for="cycle_range" class="form-label">Cycle range: <a href="/doc#section_cycle" target="_blank"><i class="bi bi-question-circle"></i></a></label>
-                        <input type="text" class="form-control" id="cycle_range"
-                               required="" value="(2,100)">
-                        <div class="invalid-feedback">
-                            This field is required.
+                        <div class="cycle-group mb-4 p-2 border rounded">
+{#                            <strong>Cycle Range:</strong>#}
+
+                            <label class="form-label">Cycle Range:
+                                <span id="label-cycle" class="text-warning"></span>
+                            </label>
+                            <div id="slider-cycle" class="mb-3"></div>
                         </div>
                     </div>
                     <div class="col-12">
@@ -271,6 +255,172 @@
         };
         xhr.send(formData);
     }
+
+    const minVal = -1.5;
+    const maxVal = 1.5;
+    const scanMin = 0;
+    const scanMax = 5;
+    const cycleMin = 0;
+    const cycleMax = 100;
+
+    // 默认值（三个 peak）
+    const defaultTop = [
+        [-1.0, -0.70],
+        [0.0, 0.2],
+        [0.25, 0.5]
+    ];
+    const defaultBottom = [
+        [-0.925, -0.75],
+        [0.0, 0.125],
+        [0.125, 0.25]
+    ];
+    const defaultScan = [
+        [0, 0],
+        [0, 0],
+        [0, 2]
+    ];
+    const scanMVS = [
+        '10mVs',
+        '20mVs',
+        '50mVs',
+        '100mVs',
+        '150mVs',
+        '200mVs',
+    ]
+    const defaultCycle = [2, 100];
+
+    function createPeakSliderBlock(index) {
+        return `
+        <div class="peak-group mb-4 p-2 border rounded">
+            <strong>Peak ${index + 1}:</strong><br>
+
+            <label class="form-label mt-2">Top Range:
+                <span id="label-top-${index}" class="text-primary"></span>
+            </label>
+            <div id="slider-top-${index}" class="mb-3"></div>
+
+            <label class="form-label">Bottom Range:
+                <span id="label-bottom-${index}" class="text-success"></span>
+            </label>
+            <div id="slider-bottom-${index}" class="mb-3"></div>
+
+            <label class="form-label">Select Scan Rate:
+                <span id="label-scan-${index}" class="text-danger"></span>
+            </label>
+            <div id="slider-scan-${index}" class="mb-3"></div>
+        </div>`;
+    }
+
+    function updateSliders() {
+        const peakCount = parseInt($('#peak_count').val());
+        const container = $('#slider_container');
+        container.empty();
+
+        for (let i = 0; i < peakCount; i++) {
+            container.append(createPeakSliderBlock(i));
+        }
+
+        initAllSliders();
+        updateHiddenInputs();
+    }
+
+    function initAllSliders() {
+        const peakCount = parseInt($('#peak_count').val());
+
+        for (let i = 0; i < peakCount; i++) {
+            const topVal = defaultTop[i] || [minVal, minVal + 0.1];
+            const bottomVal = defaultBottom[i] || [minVal, minVal + 0.1];
+            const scanVal = defaultScan[i] || [0, 0];
+
+            initSlider(`#slider-top-${i}`, `#label-top-${i}`, minVal, maxVal, 0.01, topVal);
+            initSlider(`#slider-bottom-${i}`, `#label-bottom-${i}`, minVal, maxVal, 0.01, bottomVal);
+            initSliderScan(`#slider-scan-${i}`, `#label-scan-${i}`, scanMin, scanMax, 1, scanVal);
+        }
+
+        initSlider(`#slider-cycle`, `#label-cycle`, cycleMin, cycleMax, 1, defaultCycle);
+    }
+
+    function initSlider(sliderId, labelId, min, max, step, defaultVal) {
+        $(sliderId).slider({
+            range: true,
+            min: min,
+            max: max,
+            step: step,
+            values: defaultVal,
+            slide: function (event, ui) {
+                $(labelId).text(`${ui.values[0]} to ${ui.values[1]}`);
+            },
+            change: function () {
+                updateHiddenInputs();
+            },
+            create: function () {
+                const val = $(this).slider("values");
+                $(labelId).text(`${val[0]} to ${val[1]}`);
+            }
+        });
+    }
+    function initSliderScan(sliderId, labelId, min, max, step, defaultVal) {
+        $(sliderId).slider({
+            range: true,
+            min: min,
+            max: max,
+            step: step,
+            values: defaultVal,
+            slide: function (event, ui) {
+                $(labelId).text(`${scanMVS[ui.values[0]]} to ${scanMVS[ui.values[1]]}`);
+            },
+            change: function () {
+                updateHiddenInputs();
+            },
+            create: function () {
+                const val = $(this).slider("values");
+                $(labelId).text(`${scanMVS[val[0]]} to ${scanMVS[val[1]]}`);
+            }
+        });
+    }
+
+    function updateHiddenInputs() {
+        const peakCount = parseInt($('#peak_count').val());
+        let peaksTop = [];
+        let peaksBottom = [];
+        let scan_rate_from = [];
+        let scan_rate_after = [];
+
+        for (let i = 0; i < peakCount; i++) {
+            const valTop = $(`#slider-top-${i}`).slider("values");
+            const valBottom = $(`#slider-bottom-${i}`).slider("values");
+            const valScan = $(`#slider-scan-${i}`).slider("values");
+
+            peaksTop.push(`(${valTop[0].toFixed(3)}, ${valTop[1].toFixed(3)})`);
+            peaksBottom.push(`(${valBottom[0].toFixed(3)}, ${valBottom[1].toFixed(3)})`);
+            scan_rate_from.push(`${valScan[0]}`);
+            scan_rate_after.push(`${valScan[1]}`);
+        }
+
+        const valCycle = $('#slider-cycle').slider("values");
+
+        $('#peak_range_top').val(`[${peaksTop.join(',')}]`);
+        $('#peak_range_bottom').val(`[${peaksBottom.join(',')}]`);
+        $('#scan_rate_from').val(`[${scan_rate_from.join(',')}]`);
+        $('#scan_rate_after').val(`[${scan_rate_after.join(',')}]`);
+        $('#cycle_range').val(`(${valCycle[0]}, ${valCycle[1]})`);
+
+
+        console.log("peak_range_top", document.getElementById("peak_range_top").value);
+        console.log("peak_range_bottom", document.getElementById("peak_range_bottom").value);
+        console.log("scan_rate_from", document.getElementById("scan_rate_from").value);
+        console.log("scan_rate_after", document.getElementById("scan_rate_after").value);
+        console.log("cycle_range", document.getElementById("cycle_range").value);
+    }
+
+    $(document).ready(function () {
+        $('#peak_count').val(3); // 默认 3 个 peak
+        updateSliders();
+
+        $('#peak_count').on('change', function () {
+            updateSliders();
+        });
+    });
 
 </script>
 
