@@ -258,8 +258,7 @@
 
     const minVal = -1.5;
     const maxVal = 1.5;
-    const scanMin = 0;
-    const scanMax = 5;
+
     const cycleMin = 0;
     const cycleMax = 100;
 
@@ -280,8 +279,13 @@
         [0, 2]
     ];
     const scanMVS = [
+        {% if data['status'] == 'done' %}
         {{  data['form1']['output']['mVs_list_str'] |safe }}
+        {% else %}
+        {% endif %}
     ]
+    const scanMin = 0;
+    const scanMax = Math.max( scanMVS.length - 1, 0 );
     const defaultCycle = [2, 100];
 
     function createPeakSliderBlock(index) {
