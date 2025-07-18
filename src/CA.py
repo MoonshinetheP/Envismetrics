@@ -1,3 +1,42 @@
+"""
+CA.py - Chronoamperometry (CA) Analysis Module
+----------------------------------------------
+
+This module is part of the Envismetrics software suite and provides both visualization
+and diffusion coefficient analysis for Chronoamperometry (CA) data. It reads time-dependent
+potential and current measurements from electrochemical experiments and offers a standardized
+approach to visualize raw signals and compute key kinetic parameters using the Cottrell equation.
+
+Core Functions:
+---------------
+1. `step1()`: Raw Data Visualization
+   - Generates two plots per dataset:
+     - A: Applied Potential vs Time
+     - B: Current vs Time
+   - Useful for preliminary data inspection and quality control.
+
+2. `step2(inter, n, a, c, x_range)`: Diffusion Coefficient Calculation
+   - Applies the Cottrell equation to estimate diffusion coefficients (D) from current-time curves.
+   - Performs linear regression on transformed data (Bt vs I), where Bt ~ t^(-1/2).
+   - Produces:
+     - Plot of raw current vs time.
+     - Plot of regression used to extract D.
+     - Summary table (CSV) with slope, D, and R² for each dataset.
+
+Features:
+---------
+- Supports batch processing of multiple CA files.
+- Configurable analysis range (`x_range`) for linear regression.
+- Automatically handles file saving, figure generation, and output management.
+- Saves intermediate results and metadata to `data.json` and CSV for reproducibility.
+
+Dependencies:
+-------------
+- numpy, pandas, matplotlib, scipy, sklearn
+- config.py
+- BaseModule.py
+"""
+
 import os as os
 import pandas as pd
 import numpy as np
@@ -11,14 +50,18 @@ from config import *
 from BaseModule import BaseModule
 
 def get_num(filename):
-    # 定义要匹配的字符串
-    # filename = "(3)PFOA400ppm_75075_50s_CA.xlsx"
-    # filename = "3PFOA400ppm_75075_50s_CA.xlsx"
+    """
+    Extracts the first number found in the filename using regex.
 
-    # 使用正则表达式匹配数字部分
+    Args:
+        filename (str): File name string (e.g., '3PFOA400ppm_75075_CA.xlsx')
+
+    Returns:
+        int or None: Extracted number, or None if no match found.
+
+    """
     match = re.search(r'(\d+)', filename)
 
-    # 如果匹配成功，则打印括号中的内容
     if match:
         result = match.group(1)
         return int(result)
@@ -28,6 +71,12 @@ def get_num(filename):
 
 class CA(BaseModule):
     def __init__(self, version):
+        """
+        Initialize the CA module with a version identifier.
+
+        Args:
+            version (str): Version name or ID for the run.
+        """
         super().__init__(version)
 
     def check_columns(self, data):
@@ -43,6 +92,17 @@ class CA(BaseModule):
         return ''
 
     def step1(self):
+        """
+        Step 1: Load CA data files, plot potential and current over time, and save outputs.
+
+        Outputs:
+            - CA_form1_p1.png: Potential vs Time for all files
+            - CA_form1_p2.png: Current vs Time for all files
+            - data.json: Metadata and output file paths
+
+        Returns:
+            dict: Status and result metadata
+        """
         data_file = os.path.join(self.datapath, 'data.json')
         if os.path.exists(data_file):
             todata = json.loads(open(data_file, 'r').read())
@@ -142,6 +202,19 @@ class CA(BaseModule):
 
 
     def step2(self, inter, n, a, c, x_range=''):
+        """
+        Step 2: Calculate diffusion coefficient D from chronoamperometric data using Cottrell equation.
+
+        Args:
+            inter (int): Not used in current implementation.
+            n (int): Number of electrons transferred in the reaction.
+            a (float): Electrode surface area in cm².
+            c (float): Initial analyte concentration in mol/cm³.
+            x_range (str): A string specifying the range for regression in the form '[start, end]'.
+
+        Returns:
+            dict: A dictionary with image files, regression output, and calculated D values.
+        """
         data = self.read_data()
         interval = len(data)
         status_msg = ''
