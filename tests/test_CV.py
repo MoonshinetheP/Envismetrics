@@ -1,14 +1,57 @@
-'''My Test'''
-
-import sys
+import pytest
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from CV import check_files, extract_mvs
+import json
+import pandas as pd
+from unittest.mock import patch, MagicMock
+from src.CV import CV, Search_scan_rate, extract_mvs, extract_rpm
 
-def test_check_files():
-    '''Test that get_num function works '''
-    assert check_files(['test.jpg', 'test.csv']) == False
-    assert check_files(['test.xlsx', 'test.csv']) == True
 
-def test_extract_rpm():
-    assert extract_mvs('G_P_KOH40.0032gL_DMAB0.0475gL_20mVs_CV.xlsx') == '20mVs'
+def test_search_scan_rate_valid():
+    assert Search_scan_rate("DMAB_10mVs.csv") == 10
+    assert Search_scan_rate("sample_500mVs.txt") == 500
+
+def test_search_scan_rate_invalid():
+    assert Search_scan_rate("file_without_scanrate.csv") == -1
+
+
+def test_extract_mvs_valid():
+    assert extract_mvs("data_20mVs_CV.csv") == "20mVs"
+
+def test_extract_mvs_invalid():
+    assert extract_mvs("data.csv") is None
+
+def test_extract_rpm_valid():
+    assert extract_rpm("data_800rpm.csv") == "800rpm"
+
+def test_extract_rpm_invalid():
+    assert extract_rpm("file.txt") is None
+
+
+
+@patch.object(CV, 'read_data')
+def test_start1_success(mock_read_data, tmp_path):
+    df = pd.DataFrame({
+        "WE(1).Current (A)": [0.1, 0.2, 0.3],
+        "WE(1).Potential (V)": [-0.1, 0.0, 0.1],
+        "Scan": [1, 1, 1]
+    })
+
+    mock_read_data.return_value = {10: df}
+
+    # Save dummy files_info
+    info_file = tmp_path / "files_info.json"
+    info_file.write_text(json.dumps([{
+        "filename": "data_10mVs.xlsx",
+        "existed_filename": "dummy_path.xlsx"
+    }]))
+
+    cv = CV(version="v_test", files_info=str(info_file))
+    cv.datapath = tmp_path
+    cv.savepath = tmp_path
+
+    result = cv.start1({"sigma": "1.0", "cycle": "1"})
+    assert result["status"] is True
+    out = result["data"]["CV"]["form1"]["output"]
+    assert os.path.exists(tmp_path / out["file1"])
+    assert os.path.exists(tmp_path / out["file2"])
+    assert os.path.exists(tmp_path / out["file3"])
